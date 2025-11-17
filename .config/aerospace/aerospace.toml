@@ -1,0 +1,81 @@
+# AeroSpace Configuration
+# https://github.com/nikitabobko/AeroSpace
+
+# Start AeroSpace at login
+start-at-login = true
+
+# Normalizations. See: https://nikitabobko.github.io/guide#normalization
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Prevent automatic focus following
+automatically-unhide-macos-hidden-apps = false
+
+# Notify Sketchybar about workspace changes
+exec-on-workspace-change = [
+  '/bin/bash',
+  '-c',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+]
+
+# Gaps between windows
+[gaps]
+inner.horizontal = 10
+inner.vertical = 10
+outer.left = 10
+outer.bottom = 10
+outer.top = 10
+outer.right = 10
+
+# Mode definitions
+[mode.main.binding]
+# Hyperkey is Ctrl+Alt+Cmd (meh key without Shift)
+
+# Focus windows
+ctrl-alt-cmd-h = 'focus left'
+ctrl-alt-cmd-j = 'focus down'
+ctrl-alt-cmd-k = 'focus up'
+ctrl-alt-cmd-l = 'focus right'
+
+# Move windows
+ctrl-alt-cmd-shift-h = 'move left'
+ctrl-alt-cmd-shift-j = 'move down'
+ctrl-alt-cmd-shift-k = 'move up'
+ctrl-alt-cmd-shift-l = 'move right'
+
+# Switch to workspace
+ctrl-alt-cmd-1 = 'workspace 1'
+ctrl-alt-cmd-2 = 'workspace 2'
+ctrl-alt-cmd-3 = 'workspace 3'
+ctrl-alt-cmd-4 = 'workspace 4'
+ctrl-alt-cmd-5 = 'workspace 5'
+ctrl-alt-cmd-6 = 'workspace 6'
+
+# Move window to workspace
+ctrl-alt-cmd-shift-1 = 'move-node-to-workspace 1'
+ctrl-alt-cmd-shift-2 = 'move-node-to-workspace 2'
+ctrl-alt-cmd-shift-3 = 'move-node-to-workspace 3'
+ctrl-alt-cmd-shift-4 = 'move-node-to-workspace 4'
+ctrl-alt-cmd-shift-5 = 'move-node-to-workspace 5'
+ctrl-alt-cmd-shift-6 = 'move-node-to-workspace 6'
+
+# Toggle floating mode
+ctrl-alt-cmd-space = 'layout floating tiling'
+
+# Resize mode
+ctrl-alt-cmd-r = 'mode resize'
+
+# Layout manipulation
+ctrl-alt-cmd-f = 'fullscreen'
+ctrl-alt-cmd-s = 'layout v_accordion'  # stack
+ctrl-alt-cmd-t = 'layout tiles'         # tile
+ctrl-alt-cmd-e = 'layout h_accordion'  # horizontal
+
+# Resize mode
+[mode.resize.binding]
+h = 'resize width -50'
+j = 'resize height +50'
+k = 'resize height -50'
+l = 'resize width +50'
+enter = 'mode main'
+esc = 'mode main'

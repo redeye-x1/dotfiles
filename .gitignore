@@ -1,0 +1,31 @@
+# SSH Private Keys - NEVER commit these!
+.ssh/id_*
+.ssh/*_rsa
+.ssh/*_ed25519
+.ssh/*_ecdsa
+.ssh/known_hosts*
+
+# Allow public keys and config
+!.ssh/*.pub
+!.ssh/config
+
+# macOS
+.DS_Store
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+
+# Editor/Tool configs (generated/cache)
+.config/github-copilot/
+
+# Node modules (should be installed, not tracked)
+node_modules/
+bun.lock
+package-lock.json
+yarn.lock
