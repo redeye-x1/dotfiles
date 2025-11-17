@@ -4,7 +4,7 @@
 
 set -e
 
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "======================================"
 echo "  macOS Dotfiles Setup"
@@ -48,13 +48,7 @@ echo "Step 1: Checking Homebrew..."
 if ! command -v brew &> /dev/null; then
     echo "Homebrew not found. Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    
-    # Add Homebrew to PATH for Apple Silicon Macs
-    if [[ $(uname -m) == 'arm64' ]]; then
-        echo "Adding Homebrew to PATH..."
-        echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-        eval "$(/opt/homebrew/bin/brew shellenv)"
-    fi
+    eval "$(/opt/homebrew/bin/brew shellenv)"
 else
     echo "✓ Homebrew already installed"
 fi
@@ -85,10 +79,10 @@ if ask "Do you want to set up SSH keys from Bitwarden?" Y; then
     fi
     
     # Run SSH bootstrap
-    "$DOTFILES_DIR/scripts/bootstrap-ssh.sh"
+    "$DOTFILES_DIR/bootstrap-ssh.sh"
 else
     echo ""
-    echo "Skipping SSH setup. You can run './scripts/bootstrap-ssh.sh' later."
+    echo "Skipping SSH setup. You can run './bootstrap-ssh.sh' later."
 fi
 
 echo ""
@@ -100,40 +94,30 @@ echo "Step 4: Symlinking dotfiles with stow..."
 backup_dir="$HOME/dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$backup_dir"
 
-# Files that will be stowed from shell/
-for file in .zshrc .zprofile .p10k.zsh; do
+# Common dotfiles that might exist
+for file in .zshrc .zprofile .p10k.zsh .wezterm.lua; do
     if [[ -f "$HOME/$file" ]] && [[ ! -L "$HOME/$file" ]]; then
         echo "Backing up existing $file to $backup_dir"
         mv "$HOME/$file" "$backup_dir/"
     fi
 done
 
-# Files that will be stowed from wezterm/
-if [[ -f "$HOME/.wezterm.lua" ]] && [[ ! -L "$HOME/.wezterm.lua" ]]; then
-    echo "Backing up existing .wezterm.lua to $backup_dir"
-    mv "$HOME/.wezterm.lua" "$backup_dir/"
+# Backup .config directory if it exists and isn't a symlink
+if [[ -d "$HOME/.config" ]] && [[ ! -L "$HOME/.config" ]]; then
+    echo "Backing up existing .config directory to $backup_dir"
+    cp -r "$HOME/.config" "$backup_dir/"
 fi
 
-# Unstow existing packages first to avoid conflicts
+# Unstow first to clean up any existing symlinks
 cd "$DOTFILES_DIR"
 echo ""
-echo "Unstowing existing packages..."
-for package in .config shell wezterm ssh scripts opencode; do
-    if [[ -d "$package" ]]; then
-        echo "  Unstowing $package..."
-        stow -D "$package" 2>/dev/null || true
-    fi
-done
+echo "Unstowing existing dotfiles..."
+stow -D . 2>/dev/null || true
 
-# Stow all dotfiles packages
+# Stow all dotfiles
 echo ""
-echo "Stowing packages..."
-for package in .config shell wezterm ssh scripts opencode; do
-    if [[ -d "$package" ]]; then
-        echo "  Stowing $package..."
-        stow "$package" 2>/dev/null || echo "    (Skipping $package - conflicts or empty)"
-    fi
-done
+echo "Stowing dotfiles..."
+stow --adopt . 2>/dev/null || stow .
 
 echo "✓ Dotfiles symlinked"
 
@@ -144,15 +128,15 @@ echo "Step 5: Installing Homebrew packages..."
 
 # Core development tools
 echo "Installing core development tools..."
-brew install git neovim ripgrep fd bat fzf
+brew install git neovim ripgrep fd bat fzf eza tree-sitter jq lazygit zoxide yazi
 
 # Terminal and shell tools
 echo "Installing terminal tools..."
-brew install wezterm zsh-autosuggestions zsh-syntax-highlighting yazi opencode
+brew install powerlevel10k opencode
 
-# Powerlevel10k theme
-echo "Installing Powerlevel10k..."
-brew install powerlevel10k
+# Language runtimes
+echo "Installing language runtimes..."
+brew install node ruby
 
 # Window management and UI
 echo "Installing window management tools..."
@@ -161,46 +145,62 @@ brew install --cask nikitabobko/tap/aerospace
 # SketchyBar
 echo "Installing SketchyBar..."
 brew tap FelixKratz/formulae
-brew install sketchybar
-brew install font-sketchybar-app-font
+brew install sketchybar borders
+
+# Install SbarLua (Lua plugin for SketchyBar)
+echo "Installing SbarLua..."
+git clone https://github.com/FelixKratz/SbarLua.git /tmp/SbarLua && cd /tmp/SbarLua/ && make install && rm -rf /tmp/SbarLua/
+cd "$DOTFILES_DIR"
+
+# Fonts
+echo "Installing fonts..."
+brew install --cask font-sf-mono font-sf-pro font-symbols-only-nerd-font sf-symbols
 
 # Optional: Install additional tools
-if ask "Do you want to install additional development tools? (Node.js, Python, Docker, etc.)" Y; then
+if ask "Do you want to install additional development tools? (Docker, Python, etc.)" Y; then
     echo "Installing additional tools..."
-    brew install node python@3.11 docker
+    brew install --cask docker
 fi
 
 echo "✓ Homebrew packages installed"
 
 echo ""
 
-# 6. Setup sketchybar
-echo "Step 6: Setting up SketchyBar..."
-if ask "Do you want to start SketchyBar now?" Y; then
+# 6. Setup sketchybar and borders
+echo "Step 6: Setting up SketchyBar and Borders..."
+echo ""
+if ask "Do you want to start SketchyBar and Borders now?" Y; then
+    # Kill any existing processes
+    killall sketchybar 2>/dev/null || true
+    killall borders 2>/dev/null || true
+    
+    # Start sketchybar service
     brew services start sketchybar
+    
+    # Start borders with Nord theme colors
+    borders active_color=0xff88c0d0 inactive_color=0xff4c566a &
+    
     echo "✓ SketchyBar started"
+    echo "✓ Borders started (active: Nord cyan, inactive: Nord gray)"
+    echo ""
+    echo "⚠️  IMPORTANT: SketchyBar needs permissions!"
+    echo "You may see a permission dialog - please grant access."
+    echo ""
+    echo "If you see a gray bar with no items:"
+    echo "1. Go to System Settings → Privacy & Security → Accessibility"
+    echo "2. Click the '+' button and add: /opt/homebrew/opt/sketchybar/bin/sketchybar"
+    echo "3. Enable the checkbox for sketchybar"
+    echo "4. Run: brew services restart sketchybar"
 else
     echo "To start SketchyBar later, run: brew services start sketchybar"
+    echo "To start Borders later, run: borders active_color=0xff88c0d0 inactive_color=0xff4c566a &"
 fi
 
 echo ""
 
-# 7. Setup default shell
-echo "Step 7: Setting up Zsh..."
-if [[ "$SHELL" != "$(which zsh)" ]]; then
-    if ask "Do you want to set Zsh as your default shell?" Y; then
-        chsh -s "$(which zsh)"
-        echo "✓ Default shell changed to Zsh"
-    fi
-else
-    echo "✓ Zsh is already your default shell"
-fi
-
-echo ""
-
-# 8. Switch git remote to SSH (if SSH was set up)
+# 7. Switch git remote to SSH (if SSH was set up)
 if [[ -f "$HOME/.ssh/id_ed25519_github" ]]; then
-    echo "Step 8: Switching git remote to SSH..."
+    echo "Step 7: Switching git remote to SSH..."
     cd "$DOTFILES_DIR"
     current_remote=$(git remote get-url origin)
     
@@ -213,7 +213,7 @@ if [[ -f "$HOME/.ssh/id_ed25519_github" ]]; then
         echo "✓ Git remote already using SSH"
     fi
 else
-    echo "Step 8: Skipping git remote switch (SSH keys not set up)"
+    echo "Step 7: Skipping git remote switch (SSH keys not set up)"
 fi
 
 echo ""
@@ -221,15 +221,12 @@ echo "======================================"
 echo "  Setup Complete!"
 echo "======================================"
 echo ""
-echo "Next steps:"
-echo "  1. Restart your terminal (or run: source ~/.zshrc)"
-echo "  2. Open a new terminal window to see your setup"
-echo ""
 
-if [[ -d "$backup_dir" ]] && [[ -n "$(ls -A "$backup_dir")" ]]; then
+if [[ -d "$backup_dir" ]] && [[ -n "$(ls -A "$backup_dir" 2>/dev/null)" ]]; then
     echo "Your old dotfiles have been backed up to:"
     echo "  $backup_dir"
     echo ""
 fi
 
-echo "Enjoy your new setup! 🚀"
+echo "Restart your terminal to see changes"
+echo ""

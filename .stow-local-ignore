@@ -1,0 +1,13 @@
+# Ignore version control
+^/\.git
+^/\.gitignore
+
+# Ignore documentation
+^/README\.md
+
+# Ignore installation scripts
+^/install\.sh
+^/bootstrap-ssh\.sh
+
+# Ignore stow configuration
+^/\.stow-local-ignore
