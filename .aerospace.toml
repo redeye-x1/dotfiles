@@ -24,8 +24,11 @@ inner.horizontal = 10
 inner.vertical = 10
 outer.left = 10
 outer.bottom = 10
-outer.top = 10
 outer.right = 10
+# Different top padding for built-in display vs external monitors
+# Built-in display: 10px (macOS handles menu bar space automatically)
+# External monitors: 49px (space for SketchyBar: 39px height + 10px padding)
+outer.top = [{ monitor."built-in" = 10 }, 49]
 
 # Mode definitions
 [mode.main.binding]
