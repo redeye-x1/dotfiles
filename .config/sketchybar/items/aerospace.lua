@@ -65,7 +65,6 @@ for i = 1, 6, 1 do
       border_width = 0,
       corner_radius = 5,
       height = 20,
-      width = 30,
     },
     icon = {
       drawing = false,
