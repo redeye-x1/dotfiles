@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [".config/opencode/bmad-rules.md"],
+  "mcp": {
+    "apple-docs": {
+      "type": "local",
+      "command": ["npx", "-y", "@kimsungwhee/apple-docs-mcp"],
+      "enabled": true
+    }
+  },
+  "tools": {
+    "apple-docs*": false
+  },
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "description": "Full development work with all tools enabled",
+      "temperature": 0.3
+    },
+    "plan": {
+      "mode": "primary",
+      "description": "Analysis and planning without making changes",
+      "temperature": 0.1,
+      "permission": {
+        "edit": "deny",
+        "bash": "ask"
+      }
+    },
+    "apple-dev": {
+      "mode": "primary",
+      "description": "Apple platform developer with build capabilities and Apple Docs access",
+      "temperature": 0.3,
+      "tools": {
+        "apple-docs*": true
+      }
+    }
+  },
+  "permission": {
+    "bash": {
+      "git push": "ask",
+      "rm -rf": "ask",
+      "npm publish": "ask"
+    }
+  },
+  "autoupdate": true
+}

@@ -1,13 +1,16 @@
-# SSH Private Keys - NEVER commit these!
+# SSH Keys - ignore all keys (public and private)
 .ssh/id_*
 .ssh/*_rsa
 .ssh/*_ed25519
 .ssh/*_ecdsa
+.ssh/*.pub
 .ssh/known_hosts*
 
-# Allow public keys and config
-!.ssh/*.pub
+# Allow config only
 !.ssh/config
+
+# Machine-specific directory shortcuts
+.config/directories
 
 # macOS
 .DS_Store
@@ -23,6 +26,11 @@
 
 # Editor/Tool configs (generated/cache)
 .config/github-copilot/
+
+# OpenCode (track config and agents, but not sessions/history)
+.config/opencode/sessions/
+.config/opencode/history/
+.config/opencode/.cache/
 
 # Node modules (should be installed, not tracked)
 node_modules/

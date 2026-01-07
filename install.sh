@@ -128,29 +128,55 @@ echo "Step 5: Installing Homebrew packages..."
 
 # Core development tools
 echo "Installing core development tools..."
-brew install git neovim ripgrep fd bat fzf eza tree-sitter jq lazygit zoxide yazi
+brew install git neovim ripgrep fd bat fzf eza tree-sitter jq lazygit lazydocker zoxide yazi
 
 # Terminal and shell tools
 echo "Installing terminal tools..."
 brew install powerlevel10k opencode
+brew install --cask wezterm
 
 # Language runtimes
 echo "Installing language runtimes..."
-brew install node ruby
+brew install nvm ruby
+
+# Setup NVM directory
+export NVM_DIR="$HOME/.nvm"
+mkdir -p "$NVM_DIR"
+[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
+
+# Install latest LTS Node via NVM
+echo "Installing Node.js LTS via NVM..."
+nvm install --lts
+nvm use --lts
 
 # Window management and UI
 echo "Installing window management tools..."
 brew install --cask nikitabobko/tap/aerospace
 
-# SketchyBar
-echo "Installing SketchyBar..."
+# Borders (window borders)
+echo "Installing Borders..."
 brew tap FelixKratz/formulae
-brew install sketchybar borders
+brew install borders
 
-# Install SbarLua (Lua plugin for SketchyBar)
-echo "Installing SbarLua..."
-git clone https://github.com/FelixKratz/SbarLua.git /tmp/SbarLua && cd /tmp/SbarLua/ && make install && rm -rf /tmp/SbarLua/
+# Ubersicht and simple-bar (status bar)
+echo "Installing Ubersicht..."
+brew install --cask ubersicht
+
+# Install simple-bar widget
+echo "Installing simple-bar..."
+WIDGETS_DIR="$HOME/Library/Application Support/Übersicht/widgets"
+mkdir -p "$WIDGETS_DIR"
+if [[ -d "$WIDGETS_DIR/simple-bar" ]]; then
+    echo "simple-bar already installed, updating..."
+    cd "$WIDGETS_DIR/simple-bar" && git pull
+else
+    git clone https://github.com/Jean-Tinland/simple-bar.git "$WIDGETS_DIR/simple-bar"
+fi
 cd "$DOTFILES_DIR"
+
+# Container tools
+echo "Installing container tools..."
+brew install podman
 
 # Fonts
 echo "Installing fonts..."
@@ -166,33 +192,32 @@ echo "✓ Homebrew packages installed"
 
 echo ""
 
-# 6. Setup sketchybar and borders
-echo "Step 6: Setting up SketchyBar and Borders..."
+# 6. Setup simple-bar and borders
+echo "Step 6: Setting up simple-bar and Borders..."
 echo ""
-if ask "Do you want to start SketchyBar and Borders now?" Y; then
+if ask "Do you want to start Ubersicht (simple-bar) and Borders now?" Y; then
     # Kill any existing processes
-    killall sketchybar 2>/dev/null || true
+    killall Übersicht 2>/dev/null || true
     killall borders 2>/dev/null || true
     
-    # Start sketchybar service
-    brew services start sketchybar
+    # Start Ubersicht (simple-bar runs as a widget inside it)
+    open -a "Übersicht"
     
     # Start borders with Nord theme colors
     borders active_color=0xff88c0d0 inactive_color=0xff4c566a &
     
-    echo "✓ SketchyBar started"
+    echo "✓ Ubersicht started (simple-bar widget)"
     echo "✓ Borders started (active: Nord cyan, inactive: Nord gray)"
     echo ""
-    echo "⚠️  IMPORTANT: SketchyBar needs permissions!"
+    echo "⚠️  IMPORTANT: Ubersicht needs permissions!"
     echo "You may see a permission dialog - please grant access."
     echo ""
-    echo "If you see a gray bar with no items:"
+    echo "If simple-bar doesn't appear:"
     echo "1. Go to System Settings → Privacy & Security → Accessibility"
-    echo "2. Click the '+' button and add: /opt/homebrew/opt/sketchybar/bin/sketchybar"
-    echo "3. Enable the checkbox for sketchybar"
-    echo "4. Run: brew services restart sketchybar"
+    echo "2. Enable the checkbox for Ubersicht"
+    echo "3. Restart Ubersicht from the menu bar icon"
 else
-    echo "To start SketchyBar later, run: brew services start sketchybar"
+    echo "To start Ubersicht later, run: open -a 'Übersicht'"
     echo "To start Borders later, run: borders active_color=0xff88c0d0 inactive_color=0xff4c566a &"
 fi
 

@@ -11,11 +11,11 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # Prevent automatic focus following
 automatically-unhide-macos-hidden-apps = false
 
-# Notify Sketchybar about workspace changes
+# Notify simple-bar about workspace changes
 exec-on-workspace-change = [
   '/bin/bash',
   '-c',
-  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE'
+  'osascript -e "tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\""'
 ]
 
 # Gaps between windows
@@ -25,10 +25,8 @@ inner.vertical = 10
 outer.left = 10
 outer.bottom = 10
 outer.right = 10
-# Different top padding for built-in display vs external monitors
-# Built-in display: 10px (macOS handles menu bar space automatically)
-# External monitors: 49px (space for SketchyBar: 39px height + 10px padding)
-outer.top = [{ monitor."built-in" = 10 }, 49]
+# Top padding for simple-bar (28px bar height + 12px padding)
+outer.top = 10
 
 # Mode definitions
 [mode.main.binding]
