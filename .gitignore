@@ -9,9 +9,6 @@
 # Allow config only
 !.ssh/config
 
-# Machine-specific directory shortcuts
-.config/directories
-
 # macOS
 .DS_Store
 
@@ -37,3 +34,4 @@ node_modules/
 bun.lock
 package-lock.json
 yarn.lock
+.config/raycast/

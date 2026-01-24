@@ -40,4 +40,4 @@ export ANDROID_HOME="/Users/mago/Library/Android/sdk"
 export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin"
 
 # opencode
-export PATH="/Users/magon/.opencode/bin:$PATH"
+export PATH="$HOME/.opencode/bin:$PATH"
