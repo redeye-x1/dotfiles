@@ -9,6 +9,9 @@
 # Allow config only
 !.ssh/config
 
+# Machine-specific directory shortcuts
+.config/directories
+
 # macOS
 .DS_Store
 
