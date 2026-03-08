@@ -44,6 +44,7 @@ return {
         css = { 'prettier' },
         html = { 'prettier' },
         markdown = { 'prettier' },
+        mdx = { 'prettier' },
       },
     },
   },

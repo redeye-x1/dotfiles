@@ -1,2 +1,6 @@
-dev=/Users/mago/development
-dot=/Users/mago/dotfiles
+# Machine-specific directory shortcuts
+# Format: name=/path/to/directory
+# Usage: cdname (e.g., cddev, cddot)
+
+dev=/Users/magon/development
+dot=/Users/magon/dotfiles

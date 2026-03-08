@@ -25,17 +25,37 @@ local nord = {
 	},
 }
 
-local SOLID_LEFT_ARROW = wezterm.nerdfonts.pl_right_hard_divider
-local SOLID_RIGHT_ARROW = wezterm.nerdfonts.pl_left_hard_divider
-
 config.color_scheme = "nord"
 config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 16.0
-config.use_fancy_tab_bar = false
+config.use_fancy_tab_bar = true
 config.tab_bar_at_bottom = false
-config.tab_max_width = 32
 config.window_background_opacity = 0.98
 config.window_decorations = "RESIZE"
+config.max_fps = 120
+config.animation_fps = 60
+config.front_end = "WebGpu"
+
+-- Fancy tab bar styling (Nord theme)
+config.window_frame = {
+	font = wezterm.font("JetBrainsMono Nerd Font", { weight = "Bold" }),
+	font_size = 14.0,
+	active_titlebar_bg = nord.polar_night.nord0,
+	inactive_titlebar_bg = nord.polar_night.nord0,
+	active_titlebar_fg = nord.snow_storm.nord4,
+	inactive_titlebar_fg = nord.polar_night.nord3,
+	inactive_titlebar_border_bottom = nord.polar_night.nord0,
+	active_titlebar_border_bottom = nord.polar_night.nord0,
+	button_fg = nord.snow_storm.nord4,
+	button_bg = nord.polar_night.nord0,
+	button_hover_fg = nord.snow_storm.nord6,
+	button_hover_bg = nord.polar_night.nord2,
+}
+
+-- Command palette styling (Nord theme)
+config.command_palette_bg_color = nord.polar_night.nord1
+config.command_palette_fg_color = nord.snow_storm.nord4
+config.command_palette_font_size = 14.0
 
 config.colors = {
 	tab_bar = {
@@ -77,28 +97,20 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
 	end
 
 	local title = tab.active_pane.title or "zsh"
-	if #title > 20 then
-		title = title:sub(1, 19) .. "…"
+	if #title > 15 then
+		title = title:sub(1, 14) .. "…"
 	end
 
-	local tab_number_icons = {
-		wezterm.nerdfonts.md_numeric_1_box,
-		wezterm.nerdfonts.md_numeric_2_box,
-		wezterm.nerdfonts.md_numeric_3_box,
-		wezterm.nerdfonts.md_numeric_4_box,
-		wezterm.nerdfonts.md_numeric_5_box,
-		wezterm.nerdfonts.md_numeric_6_box,
-		wezterm.nerdfonts.md_numeric_7_box,
-		wezterm.nerdfonts.md_numeric_8_box,
-		wezterm.nerdfonts.md_numeric_9_box,
-	}
-
-	local tab_icon = tab_number_icons[tab.tab_index + 1] or tostring(tab.tab_index + 1)
+	local tab_number = tostring(tab.tab_index + 1)
 
 	return {
+		-- Number badge
 		{ Background = { Color = background } },
 		{ Foreground = { Color = foreground } },
-		{ Text = " " .. tab_icon .. " " .. title .. " " },
+		{ Text = " " .. tab_number .. " " },
+		-- Title (inherits tab bar background)
+		{ Foreground = { Color = foreground } },
+		{ Text = " " .. title .. " " },
 	}
 end)
 
@@ -245,7 +257,12 @@ table.insert(config.keys, {
 	action = wezterm.action.CloseCurrentPane({ confirm = true }),
 })
 
-
+-- Command palette (CMD + SHIFT + P)
+table.insert(config.keys, {
+	key = "p",
+	mods = "CMD|SHIFT",
+	action = wezterm.action.ActivateCommandPalette,
+})
 
 -- Resurrect: Save workspace with name prompt (CMD + SHIFT + S)
 table.insert(config.keys, {
