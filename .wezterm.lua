@@ -67,7 +67,7 @@ config.colors = {
 		},
 		inactive_tab = {
 			bg_color = nord.polar_night.nord0,
-			fg_color = nord.polar_night.nord3,
+			fg_color = "#9099AB",
 		},
 		inactive_tab_hover = {
 			bg_color = nord.polar_night.nord2,
@@ -85,8 +85,8 @@ config.colors = {
 }
 
 wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_width)
-	local background = nord.polar_night.nord0
-	local foreground = nord.polar_night.nord3
+	local background
+	local foreground
 
 	if tab.is_active then
 		background = nord.frost.nord8
@@ -94,6 +94,9 @@ wezterm.on("format-tab-title", function(tab, tabs, panes, config, hover, max_wid
 	elseif hover then
 		background = nord.polar_night.nord2
 		foreground = nord.snow_storm.nord4
+	else
+		background = nord.polar_night.nord0
+		foreground = "#9099AB"
 	end
 
 	local title = tab.active_pane.title or "zsh"
