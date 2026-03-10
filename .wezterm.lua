@@ -327,5 +327,22 @@ table.insert(config.keys, {
 	end),
 })
 
+-- Quick-select mode: select and copy URLs, paths, hashes, etc. (Cmd + Shift + Space)
+table.insert(config.keys, {
+	key = "Space",
+	mods = "CMD|SHIFT",
+	action = wezterm.action.QuickSelect,
+})
+
+-- Quick-select patterns for common items
+config.quick_select_patterns = {
+	-- Git short hashes (7+ hex chars)
+	"[0-9a-f]{7,40}",
+	-- IP addresses
+	"\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}",
+	-- UUIDs
+	"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}",
+}
+
 return config
 
