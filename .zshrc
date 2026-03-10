@@ -31,6 +31,11 @@ export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.
 alias lg="lazygit"
 alias ld="lazydocker"
 alias reload="source ~/.zshrc"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ports="lsof -iTCP -sTCP:LISTEN -P -n"
+alias ip="curl -s ifconfig.me"
+alias hs="history 1"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
@@ -49,6 +54,16 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+
+# ── History ────────────────────────────────────────────────────────
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY          # share history across all open terminals
+setopt HIST_IGNORE_ALL_DUPS   # remove older duplicate entries
+setopt HIST_REDUCE_BLANKS     # remove extra whitespace
+setopt HIST_IGNORE_SPACE      # don't save commands starting with a space
+setopt APPEND_HISTORY         # append instead of overwrite
 
 # ── Zsh completion system ──────────────────────────────────────────
 FPATH=$HOMEBREW_PREFIX/share/zsh-completions:$FPATH
