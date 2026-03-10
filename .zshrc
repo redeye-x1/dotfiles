@@ -36,7 +36,7 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
 
 # Android SDK
-export ANDROID_HOME="/Users/mago/Library/Android/sdk"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$ANDROID_HOME/tools/bin"
 
 # opencode
@@ -49,3 +49,34 @@ export PATH="$HOME/.opencode/bin:$PATH"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
+
+# ── Zsh completion system ──────────────────────────────────────────
+FPATH=$HOMEBREW_PREFIX/share/zsh-completions:$FPATH
+autoload -Uz compinit
+# Only regenerate .zcompdump once a day for speed
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
+
+# ── Zoxide (smart cd) ─────────────────────────────────────────────
+eval "$(zoxide init zsh)"
+
+# ── fzf shell integration (Ctrl+R, Ctrl+T, Alt+C) ─────────────────
+source <(fzf --zsh)
+export FZF_DEFAULT_OPTS="--color=fg:#D8DEE9,bg:#2E3440,hl:#88C0D0 --color=fg+:#ECEFF4,bg+:#434C5E,hl+:#8FBCBB --color=info:#81A1C1,prompt:#88C0D0,pointer:#88C0D0 --color=marker:#A3BE8C,spinner:#B48EAD,header:#5E81AC"
+
+# ── Zsh plugins (via Homebrew) ─────────────────────────────────────
+source $HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source $HOMEBREW_PREFIX/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+source $HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substring-search.zsh
+
+# History substring search: use Up/Down arrows to search matching history
+bindkey '^[[A' history-substring-search-up
+bindkey '^[[B' history-substring-search-down
+
+# ── bat: syntax-highlighted man pages and help ─────────────────────
+export MANPAGER="sh -c 'col -bx | bat -l man -p'"
+export MANROFFOPT="-c"
+alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
