@@ -95,7 +95,7 @@ backup_dir="$HOME/dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$backup_dir"
 
 # Common dotfiles that might exist
-for file in .zshrc .zprofile .p10k.zsh .wezterm.lua; do
+for file in .zshrc .zprofile .p10k.zsh .wezterm.lua .gitconfig; do
     if [[ -f "$HOME/$file" ]] && [[ ! -L "$HOME/$file" ]]; then
         echo "Backing up existing $file to $backup_dir"
         mv "$HOME/$file" "$backup_dir/"
@@ -121,23 +121,20 @@ stow --adopt . 2>/dev/null || stow .
 
 echo "✓ Dotfiles symlinked"
 
+# Create SSH sockets directory for connection multiplexing
+mkdir -p "$HOME/.ssh/sockets"
+
 echo ""
 
-# 5. Install Homebrew packages
-echo "Step 5: Installing Homebrew packages..."
+# 5. Install Homebrew packages via Brewfile
+echo "Step 5: Installing Homebrew packages from Brewfile..."
+brew bundle --file="$DOTFILES_DIR/Brewfile"
+echo "✓ Brewfile packages installed"
 
-# Core development tools
-echo "Installing core development tools..."
-brew install git neovim ripgrep fd bat fzf eza tree-sitter jq lazygit lazydocker zoxide yazi
+echo ""
 
-# Terminal and shell tools
-echo "Installing terminal tools..."
-brew install powerlevel10k opencode
-brew install --cask wezterm
-
-# Language runtimes
-echo "Installing language runtimes..."
-brew install nvm ruby
+# Install language runtimes
+echo "Setting up language runtimes..."
 
 # Setup NVM directory
 export NVM_DIR="$HOME/.nvm"
@@ -148,19 +145,6 @@ mkdir -p "$NVM_DIR"
 echo "Installing Node.js LTS via NVM..."
 nvm install --lts
 nvm use --lts
-
-# Window management and UI
-echo "Installing window management tools..."
-brew install --cask nikitabobko/tap/aerospace
-
-# Borders (window borders)
-echo "Installing Borders..."
-brew tap FelixKratz/formulae
-brew install borders
-
-# Ubersicht and simple-bar (status bar)
-echo "Installing Ubersicht..."
-brew install --cask ubersicht
 
 # Install simple-bar widget
 echo "Installing simple-bar..."
@@ -174,21 +158,7 @@ else
 fi
 cd "$DOTFILES_DIR"
 
-# Container tools
-echo "Installing container tools..."
-brew install podman
-
-# Fonts
-echo "Installing fonts..."
-brew install --cask font-sf-mono font-sf-pro font-symbols-only-nerd-font sf-symbols
-
-# Optional: Install additional tools
-if ask "Do you want to install additional development tools? (Docker, Python, etc.)" Y; then
-    echo "Installing additional tools..."
-    brew install --cask docker
-fi
-
-echo "✓ Homebrew packages installed"
+echo "✓ Language runtimes and widgets set up"
 
 echo ""
 
