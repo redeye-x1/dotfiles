@@ -4,13 +4,14 @@ My personal macOS development environment setup with automated installation.
 
 ## Features
 
-- **Automated Installation**: One command to set up everything
-- **Secure SSH Key Management**: Store SSH keys securely in Bitwarden
-- **Window Management**: AeroSpace for tiling window management
-- **Status Bar**: Custom SketchyBar configuration
-- **Terminal**: WezTerm with custom configuration
-- **Shell**: Zsh with Powerlevel10k theme
-- **Editor**: Neovim with extensive plugin configuration
+- **Automated Installation**: One command to set up everything via `install.sh` + declarative `Brewfile`
+- **Secure SSH Key Management**: Store SSH keys securely in Bitwarden, auto-sync across machines
+- **Window Management**: AeroSpace tiling window manager with simple-bar status bar
+- **Terminal**: WezTerm (GPU-accelerated) with workspace persistence, pane management, and quick-select
+- **Shell**: Zsh with Powerlevel10k, autosuggestions, syntax highlighting, fuzzy finding, and smart directory jumping
+- **Editor**: Neovim (Kickstart-based) with LSP, Telescope, Harpoon, Copilot, and Nord theme
+- **Git**: Productivity-focused `.gitconfig` with aliases, rebase workflow, and conflict memory
+- **Theme**: Nord -- consistently applied across every tool
 
 ## Quick Start
 
@@ -18,14 +19,14 @@ My personal macOS development environment setup with automated installation.
 
 - macOS (tested on Apple Silicon, works on Intel too)
 - Git (pre-installed on macOS)
-- A Bitwarden account (for SSH key management)
+- A Bitwarden account (optional, for SSH key management)
 
 ### Installation
 
 1. **Clone this repository:**
    ```bash
    cd ~
-   git clone https://github.com/yourusername/dotfiles.git
+   git clone https://github.com/redeye-x1/dotfiles.git
    cd dotfiles
    ```
 
@@ -37,312 +38,262 @@ My personal macOS development environment setup with automated installation.
    The script will:
    - Install Homebrew (if not already installed)
    - Prompt you to set up SSH keys from Bitwarden
-   - Install essential tools (stow, neovim, etc.)
-   - Symlink all dotfiles to your home directory
-   - Install development tools and applications
-   - Set up SketchyBar and AeroSpace
-   - Configure Zsh as your default shell
+   - Symlink all dotfiles via GNU Stow
+   - Install all packages from the `Brewfile`
+   - Set up Node.js LTS via NVM
+   - Install simple-bar widget
+   - Optionally start Ubersicht and Borders
 
-3. **Restart your terminal** to apply all changes
-
-That's it! Your entire development environment is now set up.
-
-## SSH Key Management
-
-This setup uses **Bitwarden** to securely store and sync SSH keys across machines.
-
-### First-Time Setup: Adding SSH Keys to Bitwarden
-
-You only need to do this once. Your existing SSH keys need to be uploaded to Bitwarden.
-
-**Important:** The bootstrap script requires a folder named **"SSH Keys"** in Bitwarden. All SSH keys must be stored as Secure Notes in this folder.
-
-#### Option 1: Via Bitwarden Web Vault (Easiest)
-
-1. Go to [your Bitwarden vault](https://vault.bitwarden.com) (the bootstrap script will ask which server you use)
-2. **Create the "SSH Keys" folder** (required):
-   - Click Settings → Folders
-   - Click "New Folder"
-   - Name it exactly: `SSH Keys`
-3. **Add your SSH keys**:
-   - Click "New Item" → "Secure Note"
-   - **Name**: Whatever you want (e.g., `GitHub`, `Work Server`, `Personal VPS`)
-   - **Folder**: Select "SSH Keys" (required!)
-   - Copy your **private key** content:
-     ```bash
-     cat ~/.ssh/id_ed25519_yourkey
-     ```
-   - Paste the entire private key into the "Notes" field
-   - Click "Save"
-4. **Repeat for all your SSH keys** - add as many as you need!
-
-#### Option 2: Via Bitwarden CLI
-
-```bash
-# Install Bitwarden CLI
-brew install bitwarden-cli jq
-
-# Set server if not using US (optional)
-# bw config server https://vault.bitwarden.eu
-
-# Login to Bitwarden
-bw login
-
-# Unlock vault
-export BW_SESSION=$(bw unlock --raw)
-
-# Create "SSH Keys" folder (required)
-FOLDER_ID=$(bw get template folder | jq '.name = "SSH Keys"' | bw encode | bw create folder | jq -r '.id')
-
-# Add your SSH keys (add as many as you need - these are just examples)
-bw get template item | jq ".type = 2 | .secureNote.type = 0 | .name = \"GitHub\" | .folderId = \"$FOLDER_ID\" | .notes = \"$(cat ~/.ssh/id_ed25519_github)\"" | bw encode | bw create item
-
-bw get template item | jq ".type = 2 | .secureNote.type = 0 | .name = \"Work Server\" | .folderId = \"$FOLDER_ID\" | .notes = \"$(cat ~/.ssh/id_ed25519_work)\"" | bw encode | bw create item
-```
-
-### How It Works: Auto-Discovery
-
-The bootstrap script automatically discovers and downloads **ALL** SSH keys from the "SSH Keys" folder:
-
-- **Item name** in Bitwarden → **Filename** on disk
-- Item names are sanitized (lowercased, special characters removed)
-- Downloaded to `~/.ssh/id_ed25519_{sanitized_name}`
-
-**Examples:**
-- `GitHub` → `~/.ssh/id_ed25519_github`
-- `Work GitHub` → `~/.ssh/id_ed25519_work_github`
-- `My Personal Server` → `~/.ssh/id_ed25519_my_personal_server`
-- `Production DB` → `~/.ssh/id_ed25519_production_db`
-
-**Benefits:**
-- ✅ Add new SSH keys to Bitwarden folder → automatically downloaded on all machines
-- ✅ No need to modify the bootstrap script
-- ✅ Works with unlimited SSH keys
-- ✅ Name your keys however you want
-
-**Override Protection:**
-If an SSH key file already exists locally, the script will ask if you want to override it.
-
-### On New Machines
-
-When you run `./install.sh` on a new machine, it will:
-1. Ask which Bitwarden server you use (US .com [default], EU .eu, or custom)
-2. Prompt for your Bitwarden email and master password
-3. Automatically download all SSH keys from Bitwarden
-4. Set correct permissions (600) on the private keys
-5. Link your SSH config file
-
-No manual SSH key generation needed!
-
-## What Gets Installed
-
-### CLI Tools
-- **stow**: Dotfile symlink manager
-- **neovim**: Modern Vim-based text editor
-- **ripgrep**: Fast grep alternative
-- **fd**: Fast find alternative
-- **bat**: Cat with syntax highlighting
-- **fzf**: Fuzzy finder
-
-### Applications
-- **WezTerm**: GPU-accelerated terminal emulator
-- **AeroSpace**: Tiling window manager for macOS
-- **SketchyBar**: Custom macOS menu bar
-
-### Shell Setup
-- **Zsh**: Modern shell with autosuggestions and syntax highlighting
-- **Powerlevel10k**: Beautiful and fast Zsh theme
+3. **Restart your terminal** to apply all changes.
 
 ## Repository Structure
 
 ```
 dotfiles/
 ├── .config/
-│   ├── nvim/              # Neovim configuration
-│   ├── sketchybar/        # SketchyBar configuration
-│   └── aerospace/         # AeroSpace window manager config
+│   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)
+│   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
+│   ├── opencode/          # OpenCode AI assistant config + BMAD agents
+│   ├── yazi/              # Yazi file manager config
+│   └── github-copilot/    # GitHub Copilot config
 ├── .ssh/
-│   └── config             # SSH configuration (safe to commit)
-├── .zshrc                 # Zsh configuration
-├── .zprofile              # Zsh profile
-├── .wezterm.lua           # WezTerm terminal config
+│   └── config             # SSH host configuration (multiplexed connections)
+├── .zshrc                 # Zsh configuration (plugins, aliases, tools)
+├── .zprofile              # Zsh profile (Homebrew init)
 ├── .p10k.zsh              # Powerlevel10k theme config
+├── .wezterm.lua           # WezTerm terminal config (Nord theme, resurrect, quick-select)
+├── .gitconfig             # Git aliases, rebase workflow, diff settings
+├── .aerospace.toml        # AeroSpace tiling window manager
+├── .simplebarrc           # simple-bar status bar config
+├── .stow-local-ignore     # Files excluded from stow symlinking
 ├── .gitignore             # Prevents committing SSH private keys
+├── Brewfile               # Declarative Homebrew package list
 ├── install.sh             # Main installation script
 ├── bootstrap-ssh.sh       # SSH key setup from Bitwarden
 └── README.md              # This file
 ```
 
-## How It Works
+## Shell Features
 
-### Stow
-This setup uses [GNU Stow](https://www.gnu.org/software/stow/) to manage dotfiles. Stow creates symlinks from this repository to your home directory.
+### Aliases
 
-For example:
-- `~/dotfiles/.zshrc` → `~/.zshrc`
-- `~/dotfiles/.config/nvim` → `~/.config/nvim`
+| Alias | Command | Purpose |
+|---|---|---|
+| `ls` | `eza -la --icons=always` | Enhanced file listing with icons |
+| `wt` | `wezterm cli set-tab-title` | Quick tab title setting |
+| `lg` | `lazygit` | Git TUI |
+| `ld` | `lazydocker` | Docker/Podman TUI |
+| `reload` | `source ~/.zshrc` | Reload shell config |
+| `cddev` | `cd ~/development` | Jump to dev directory |
+| `cddot` | `cd ~/dotfiles` | Jump to dotfiles |
 
-This means you can edit files in your home directory, and changes are automatically tracked in the git repository.
+### Zoxide -- Smart Directory Jumping
 
-### Security
+Zoxide learns which directories you visit and lets you jump with partial matches:
 
-**What's committed to git:**
-- ✅ All configuration files
-- ✅ SSH `config` file (contains no secrets)
-- ✅ Installation scripts
+```bash
+z dev        # jumps to ~/development
+z dot        # jumps to ~/dotfiles
+z proj       # jumps to whichever "proj" directory you visit most
+zi           # interactive fuzzy picker of all known directories
+```
 
-**What's NEVER committed:**
-- ❌ Private SSH keys (stored in Bitwarden)
-- ❌ `known_hosts` files
-- ❌ Any secrets or API keys
+It gets smarter over time. After a week it feels like teleportation.
 
-The `.gitignore` file ensures private keys are never accidentally committed.
+### fzf -- Fuzzy Finding
 
-## Customization
+| Keybinding | Action |
+|---|---|
+| `Ctrl+R` | Fuzzy search command history (replaces default reverse search) |
+| `Ctrl+T` | Fuzzy file finder -- inserts selected path at cursor |
+| `Alt+C` | Fuzzy cd -- search and jump into subdirectories |
 
-### Adding New SSH Keys
+All styled in Nord colors.
 
-Adding a new SSH key is simple - no script modifications needed!
+### Zsh Plugins
 
-1. **Generate a new SSH key:**
-   ```bash
-   ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_newservice -C "your@email.com"
-   ```
+- **zsh-autosuggestions**: Ghost text suggestions from history as you type. Press **right arrow** to accept.
+- **zsh-syntax-highlighting**: Valid commands appear green, invalid appear red. Catches typos before you hit enter.
+- **zsh-history-substring-search**: Type a partial command, then **Up/Down arrows** to cycle only matching history entries.
+- **zsh-completions**: Extended tab completions for git, brew, docker, and hundreds of other tools.
 
-2. **Add it to Bitwarden:**
-   - Go to your Bitwarden vault (vault.bitwarden.com or vault.bitwarden.eu)
-   - Create a Secure Note with any name (e.g., `NewService`, `Production Server`, etc.)
-   - **Important:** Put it in the "SSH Keys" folder
-   - Paste the private key content in the Notes field
-   - Save
+### bat -- Syntax-Highlighted Help
 
-3. **Update `ssh/.ssh/config`:** (optional)
-   
-   The SSH config file is a template with examples. Customize it for your needs:
-   ```ssh-config
-   Host newservice
-     HostName example.com
-     User youruser
-     IdentityFile ~/.ssh/id_ed25519_newservice
-     IdentitiesOnly yes
-   ```
-   
-   Note: The `IdentityFile` path should match your Bitwarden item name (sanitized to lowercase with underscores).
+- `man git` renders with full syntax highlighting
+- Any `--help` output is automatically piped through bat
 
-4. **That's it!** The next time you run `./bootstrap-ssh.sh` (or `./install.sh` on a new machine), it will automatically discover and download your new key.
+## Git Configuration
 
-No script changes needed - the bootstrap script auto-discovers all keys from the "SSH Keys" folder!
+### Aliases
 
-### SSH Config Customization
+| Command | What it does |
+|---|---|
+| `git st` | Short status with branch info |
+| `git lg` | Pretty one-line graph log (last 20 commits) |
+| `git co <branch>` | Checkout branch |
+| `git sw <branch>` | Switch to branch |
+| `git sc <branch>` | Create and switch to new branch |
+| `git cm "msg"` | Commit with message |
+| `git ca` | Amend last commit, keep message |
+| `git undo` | Soft-reset last commit (keeps changes staged) |
+| `git unstage` | Unstage all files |
+| `git wip` | Quick "work in progress" commit of everything |
+| `git gone` | List branches whose remote tracking branch is deleted |
+| `git prune-merged` | Delete those dead branches |
 
-The `ssh/.ssh/config` file is a **template** with examples and comments. It's stowed to `~/.ssh/config` on your machine.
+### Workflow Settings
 
-**Customize it for your needs:**
-- Uncomment and modify the examples
-- Add your own hosts
-- Configure global settings (connection keepalive, agent forwarding, etc.)
-- Set up jump hosts, wildcards, and advanced patterns
+| Setting | Effect |
+|---|---|
+| `pull.rebase = true` | `git pull` rebases instead of creating merge commits |
+| `push.autoSetupRemote = true` | First push auto-sets upstream -- no more `-u origin branch` |
+| `rebase.autoStash = true` | Rebase auto-stashes dirty changes and re-applies after |
+| `rerere.enabled = true` | Git remembers conflict resolutions and auto-applies them next time |
+| `merge.conflictstyle = zdiff3` | Conflict markers include the original base version for context |
+| `diff.algorithm = histogram` | Better diff output, especially for moved code |
+| `fetch.prune = true` | Auto-removes stale remote-tracking branches on fetch |
+| `branch.sort = -committerdate` | Branches sorted by most recently committed |
+| HTTPS-to-SSH rewrite | All `https://github.com/` URLs auto-convert to SSH |
 
-The config file is safe to commit (contains no secrets) and will be synced across your machines via dotfiles.
+### Multiple GitHub Accounts
 
-### Work vs Personal GitHub Keys
+Use `includeIf` in `.gitconfig` to auto-switch identity based on directory:
 
-The SSH config supports multiple GitHub accounts. To use separate keys for work and personal:
+```gitconfig
+[includeIf "gitdir:~/work/"]
+    path = ~/.gitconfig-work
+```
 
-1. Generate separate keys and add to Bitwarden as `GitHub` and `Work GitHub` (in the "SSH Keys" folder)
+## WezTerm
 
-2. Update `.ssh/config`:
-   ```ssh-config
-   # Personal GitHub
-   Host github.com
-     HostName github.com
-     User git
-     IdentityFile ~/.ssh/id_ed25519_github
-     IdentitiesOnly yes
+- **Theme**: Nord (custom color palette)
+- **Font**: JetBrainsMono Nerd Font, size 16
+- **Renderer**: WebGPU at 120 FPS
+- **Session persistence**: Workspaces auto-save every 15 minutes via resurrect plugin
 
-   # Work GitHub (use alias)
-   Host github-work
-     HostName github.com
-     User git
-     IdentityFile ~/.ssh/id_ed25519_work
-     IdentitiesOnly yes
-   ```
+### Keybindings
 
-3. Clone work repos using the alias:
-   ```bash
-   git clone git@github-work:company/repo.git
-   ```
+| Binding | Action |
+|---|---|
+| `Ctrl+Cmd + h/j/k/l` | Navigate panes (vim-style) |
+| `Ctrl+Shift+Cmd + H` | Split pane horizontally |
+| `Ctrl+Shift+Cmd + V` | Split pane vertically |
+| `Ctrl+Shift+Cmd + W` | Close current pane |
+| `Cmd+Shift+P` | Command palette |
+| `Cmd+Shift+S` | Save workspace (with name prompt) |
+| `Cmd+S` | Load workspace (fuzzy finder) |
+| `Cmd+Shift+D` | Delete saved workspace |
+| `Cmd+Shift+Space` | Quick-select mode (URLs, paths, hashes, IPs, UUIDs) |
 
-## Manual Setup (Without Bitwarden)
+### Right Status Bar
 
-If you don't want to use Bitwarden:
+Shows current working directory, git branch, and git status (staged/modified/untracked counts) in Nord colors.
 
-1. Run `./install.sh` and answer "No" when asked about SSH setup
-2. Manually generate SSH keys:
-   ```bash
-   ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_github -C "your@email.com"
-   ```
-3. The SSH config will still work with your manually generated keys
+## AeroSpace (Window Manager)
+
+**Modifier**: `Ctrl+Alt+Cmd` (Hyper key without Shift)
+
+| Binding | Action |
+|---|---|
+| `Hyper + h/j/k/l` | Focus window left/down/up/right |
+| `Hyper+Shift + h/j/k/l` | Move window left/down/up/right |
+| `Hyper + 1-6` | Switch to workspace 1-6 |
+| `Hyper+Shift + 1-6` | Move window to workspace 1-6 |
+| `Hyper + Space` | Toggle floating/tiling |
+| `Hyper + f` | Fullscreen |
+| `Hyper + s` | Vertical accordion (stack) |
+| `Hyper + t` | Tiles layout |
+| `Hyper + r` | Enter resize mode (then h/j/k/l to resize) |
+
+## SSH Configuration
+
+### Connection Multiplexing
+
+SSH connections are multiplexed -- after the first connection to a host, subsequent connections reuse the same socket for 10 minutes. This makes `git push`, `git pull`, and repeated SSH commands near-instant (no handshake overhead).
+
+Configured hosts are defined in `.ssh/config` with per-host identity files managed via Bitwarden.
+
+## Neovim
+
+Kickstart-based configuration with lazy.nvim plugin manager. Leader key is **Space**.
+
+### Key Plugins
+
+Telescope (fuzzy finder), LSP (TypeScript, Lua, MDX), Treesitter (syntax highlighting), Harpoon (file bookmarks), Flash (motion), Neo-tree (file explorer), Copilot (AI), conform.nvim (formatting), gitsigns (git gutter), which-key (keybinding discovery).
+
+### Key Keymaps
+
+| Keymap | Action |
+|---|---|
+| `Space + sf` | Search files |
+| `Space + sg` | Live grep |
+| `Space + Space` | Find buffers |
+| `Space + /` | Fuzzy search in current buffer |
+| `gd` / `gr` | Go to definition / references |
+| `Space + ca` | Code action |
+| `Space + rn` | Rename symbol |
+| `Space + f` | Format buffer |
+| `\` | Toggle Neo-tree sidebar |
+| `Space + 1-4` | Harpoon navigate to file 1-4 |
+
+## Brewfile (Package Management)
+
+Packages are managed declaratively via `Brewfile`:
+
+```bash
+brew bundle                    # install everything in Brewfile
+brew bundle check              # see what's missing
+brew bundle cleanup            # remove packages not in Brewfile
+brew bundle dump --force       # regenerate Brewfile from installed packages
+```
+
+## SSH Key Management (Bitwarden)
+
+### How It Works
+
+The `bootstrap-ssh.sh` script auto-discovers all SSH keys from a Bitwarden folder named **"SSH Keys"**:
+
+- Item names are sanitized and become filenames: `GitHub` -> `~/.ssh/id_ed25519_github`
+- Keys are downloaded with correct permissions (600)
+- Existing keys prompt before overwriting
+
+### Adding a New SSH Key
+
+1. Generate: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_newservice -C "your@email.com"`
+2. Add to Bitwarden as a Secure Note in the "SSH Keys" folder
+3. Add a `Host` entry to `.ssh/config`
+4. Run `./bootstrap-ssh.sh` on other machines to sync
+
+### First-Time Bitwarden Setup
+
+See the `bootstrap-ssh.sh` script or run `./install.sh` which walks you through the setup interactively. Supports US, EU, and custom Bitwarden servers.
+
+## How Stow Works
+
+[GNU Stow](https://www.gnu.org/software/stow/) creates symlinks from this repository to your home directory:
+
+- `~/dotfiles/.zshrc` -> `~/.zshrc`
+- `~/dotfiles/.config/nvim/` -> `~/.config/nvim/`
+
+Edit files in either location -- changes are tracked in git automatically.
 
 ## Updating
-
-To update your dotfiles on any machine:
 
 ```bash
 cd ~/dotfiles
 git pull
 stow . --restow
+brew bundle
 ```
 
-## Troubleshooting
+## Security
 
-### SSH Keys Not Working
+**Committed**: All configuration files, SSH `config` (no secrets), installation scripts.
 
-1. Check if keys exist:
-   ```bash
-   ls -la ~/.ssh/
-   ```
-
-2. Check key permissions (should be 600):
-   ```bash
-   chmod 600 ~/.ssh/id_ed25519_*
-   ```
-
-3. Test SSH connection:
-   ```bash
-   ssh -T git@github.com
-   ```
-
-### Stow Conflicts
-
-If stow reports conflicts, you may have existing files. Back them up:
-
-```bash
-mv ~/.zshrc ~/.zshrc.backup
-cd ~/dotfiles
-stow .
-```
-
-### Bitwarden Login Issues
-
-If you have 2FA enabled on Bitwarden:
-
-```bash
-bw login --method 0  # For Authenticator app
-# Or
-bw login --method 1  # For Email
-```
+**Never committed**: Private SSH keys (stored in Bitwarden), `known_hosts`, API keys, `.env` files.
 
 ## Credits
 
 - Neovim config based on [kickstart.nvim](https://github.com/nvim-lua/kickstart.nvim)
-- SketchyBar inspired by various community configs
+- Nord theme by [Arctic Ice Studio](https://www.nordtheme.com/)
 - Terminal and shell setup curated from best practices
-
-## License
-
-Feel free to use this configuration as inspiration for your own dotfiles!
-
-## Contributing
-
-This is a personal configuration, but if you find bugs or have suggestions, feel free to open an issue!
