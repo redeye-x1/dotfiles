@@ -43,7 +43,7 @@ export PATH="$PATH:$ANDROID_HOME/emulator:$ANDROID_HOME/platform-tools:$ANDROID_
 export PATH="$HOME/.opencode/bin:$PATH"
 
 # bun completions
-[ -s "/Users/magon/.bun/_bun" ] && source "/Users/magon/.bun/_bun"
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
