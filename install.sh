@@ -13,36 +13,6 @@ echo ""
 echo "This script will set up your entire development environment."
 echo ""
 
-# Function to ask yes/no questions
-ask() {
-    local prompt default reply
-
-    if [[ ${2:-} = 'Y' ]]; then
-        prompt='Y/n'
-        default='Y'
-    elif [[ ${2:-} = 'N' ]]; then
-        prompt='y/N'
-        default='N'
-    else
-        prompt='y/n'
-        default=''
-    fi
-
-    while true; do
-        echo -n "$1 [$prompt] "
-        read -r reply </dev/tty
-
-        if [[ -z $reply ]]; then
-            reply=$default
-        fi
-
-        case "$reply" in
-            Y*|y*) return 0 ;;
-            N*|n*) return 1 ;;
-        esac
-    done
-}
-
 # 1. Check and install Homebrew
 echo "Step 1: Checking Homebrew..."
 if ! command -v brew &> /dev/null; then
@@ -55,46 +25,20 @@ fi
 
 echo ""
 
-# 2. Install essential tools
-echo "Step 2: Installing essential tools..."
+# 2. Install stow (needed before Brewfile for symlinking)
+echo "Step 2: Installing stow..."
 brew install stow
+echo "✓ Stow installed"
 
 echo ""
 
-# 3. SSH Setup (with user confirmation)
-if ask "Do you want to set up SSH keys from Bitwarden?" Y; then
-    echo ""
-    echo "Step 3: Setting up SSH keys from Bitwarden..."
-    
-    # Install Bitwarden CLI if needed
-    if ! command -v bw &> /dev/null; then
-        echo "Installing Bitwarden CLI..."
-        brew install bitwarden-cli
-    fi
-    
-    # Install jq if needed
-    if ! command -v jq &> /dev/null; then
-        echo "Installing jq..."
-        brew install jq
-    fi
-    
-    # Run SSH bootstrap
-    "$DOTFILES_DIR/bootstrap-ssh.sh"
-else
-    echo ""
-    echo "Skipping SSH setup. You can run './bootstrap-ssh.sh' later."
-fi
-
-echo ""
-
-# 4. Stow dotfiles
-echo "Step 4: Symlinking dotfiles with stow..."
+# 3. Stow dotfiles
+echo "Step 3: Symlinking dotfiles with stow..."
 
 # Backup existing files if they exist and aren't symlinks
 backup_dir="$HOME/dotfiles_backup_$(date +%Y%m%d_%H%M%S)"
 mkdir -p "$backup_dir"
 
-# Common dotfiles that might exist
 for file in .zshrc .zprofile .p10k.zsh .wezterm.lua .gitconfig; do
     if [[ -f "$HOME/$file" ]] && [[ ! -L "$HOME/$file" ]]; then
         echo "Backing up existing $file to $backup_dir"
@@ -102,19 +46,16 @@ for file in .zshrc .zprofile .p10k.zsh .wezterm.lua .gitconfig; do
     fi
 done
 
-# Backup .config directory if it exists and isn't a symlink
 if [[ -d "$HOME/.config" ]] && [[ ! -L "$HOME/.config" ]]; then
     echo "Backing up existing .config directory to $backup_dir"
     cp -r "$HOME/.config" "$backup_dir/"
 fi
 
-# Unstow first to clean up any existing symlinks
 cd "$DOTFILES_DIR"
 echo ""
 echo "Unstowing existing dotfiles..."
 stow -D . 2>/dev/null || true
 
-# Stow all dotfiles
 echo ""
 echo "Stowing dotfiles..."
 stow --adopt . 2>/dev/null || stow .
@@ -126,15 +67,15 @@ mkdir -p "$HOME/.ssh/sockets"
 
 echo ""
 
-# 5. Install Homebrew packages via Brewfile
-echo "Step 5: Installing Homebrew packages from Brewfile..."
+# 4. Install Homebrew packages via Brewfile
+echo "Step 4: Installing Homebrew packages from Brewfile..."
 brew bundle --file="$DOTFILES_DIR/Brewfile"
 echo "✓ Brewfile packages installed"
 
 echo ""
 
-# Install language runtimes
-echo "Setting up language runtimes..."
+# 5. Setup language runtimes and widgets
+echo "Step 5: Setting up language runtimes and widgets..."
 
 # Setup NVM directory
 export NVM_DIR="$HOME/.nvm"
@@ -162,45 +103,23 @@ echo "✓ Language runtimes and widgets set up"
 
 echo ""
 
-# 6. Setup simple-bar and borders
-echo "Step 6: Setting up simple-bar and Borders..."
+# 6. Load Borders LaunchAgent
+echo "Step 6: Setting up Borders..."
+launchctl unload "$HOME/Library/LaunchAgents/com.felixkratz.borders.plist" 2>/dev/null || true
+launchctl load -w "$HOME/Library/LaunchAgents/com.felixkratz.borders.plist"
+echo "✓ Borders LaunchAgent loaded (starts automatically at login)"
 echo ""
-if ask "Do you want to start Ubersicht (simple-bar) and Borders now?" Y; then
-    # Kill any existing processes
-    killall Übersicht 2>/dev/null || true
-    killall borders 2>/dev/null || true
-    
-    # Start Ubersicht (simple-bar runs as a widget inside it)
-    open -a "Übersicht"
-    
-    # Start borders with Nord theme colors
-    borders active_color=0xff88c0d0 inactive_color=0xff4c566a &
-    
-    echo "✓ Ubersicht started (simple-bar widget)"
-    echo "✓ Borders started (active: Nord cyan, inactive: Nord gray)"
-    echo ""
-    echo "⚠️  IMPORTANT: Ubersicht needs permissions!"
-    echo "You may see a permission dialog - please grant access."
-    echo ""
-    echo "If simple-bar doesn't appear:"
-    echo "1. Go to System Settings → Privacy & Security → Accessibility"
-    echo "2. Enable the checkbox for Ubersicht"
-    echo "3. Restart Ubersicht from the menu bar icon"
-else
-    echo "To start Ubersicht later, run: open -a 'Übersicht'"
-    echo "To start Borders later, run: borders active_color=0xff88c0d0 inactive_color=0xff4c566a &"
-fi
+echo "Note: Enable 'Open at Login' for Übersicht via its menu bar icon"
 
 echo ""
 
-# 7. Switch git remote to SSH (if SSH was set up)
+# 7. Switch git remote to SSH (if SSH keys exist)
 if [[ -f "$HOME/.ssh/id_ed25519_github" ]]; then
     echo "Step 7: Switching git remote to SSH..."
     cd "$DOTFILES_DIR"
     current_remote=$(git remote get-url origin)
-    
+
     if [[ $current_remote == https://* ]]; then
-        # Extract username/repo from HTTPS URL
         repo_path=$(echo "$current_remote" | sed -E 's|https://github.com/(.+)|\1|' | sed 's|\.git$||')
         git remote set-url origin "git@github.com:${repo_path}.git"
         echo "✓ Git remote switched to SSH"
@@ -208,7 +127,7 @@ if [[ -f "$HOME/.ssh/id_ed25519_github" ]]; then
         echo "✓ Git remote already using SSH"
     fi
 else
-    echo "Step 7: Skipping git remote switch (SSH keys not set up)"
+    echo "Step 7: Skipping git remote switch (no SSH keys found)"
 fi
 
 echo ""
