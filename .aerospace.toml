@@ -6,7 +6,7 @@ start-at-login = true
 
 # Refresh simple-bar after AeroSpace starts (fixes startup race condition)
 after-startup-command = [
-  'exec-and-forget sleep 2 && osascript -e "tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\""'
+  'exec-and-forget sleep 5 && osascript -e "tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\""'
 ]
 
 # Normalizations. See: https://nikitabobko.github.io/guide#normalization
