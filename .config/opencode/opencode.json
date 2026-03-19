@@ -4,15 +4,6 @@
     ".config/opencode/bmad-rules.md"
   ],
   "mcp": {
-    "apple-docs": {
-      "type": "local",
-      "command": [
-        "npx",
-        "-y",
-        "@kimsungwhee/apple-docs-mcp"
-      ],
-      "enabled": true
-    },
     "pencil": {
       "command": [
         "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64",
@@ -22,9 +13,6 @@
       "enabled": true,
       "type": "local"
     }
-  },
-  "tools": {
-    "apple-docs*": false
   },
   "agent": {
     "build": {
@@ -39,14 +27,6 @@
       "permission": {
         "edit": "deny",
         "bash": "ask"
-      }
-    },
-    "apple-dev": {
-      "mode": "primary",
-      "description": "Apple platform developer with build capabilities and Apple Docs access",
-      "temperature": 0.3,
-      "tools": {
-        "apple-docs*": true
       }
     }
   },

@@ -55,6 +55,9 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH="$HOME/.local/bin:$PATH"
 
+# Python (unversioned symlinks from Homebrew)
+export PATH="/opt/homebrew/opt/python@3.12/libexec/bin:$PATH"
+
 # ── History ────────────────────────────────────────────────────────
 HISTFILE=~/.zsh_history
 HISTSIZE=50000

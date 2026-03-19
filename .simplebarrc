@@ -84,9 +84,9 @@
     "githubWidget": false,
     "weatherWidget": false,
     "netstatsWidget": true,
-    "cpuWidget": false,
+    "cpuWidget": true,
     "gpuWidget": false,
-    "memoryWidget": false,
+    "memoryWidget": true,
     "batteryWidget": true,
     "wifiWidget": true,
     "vpnWidget": false,
@@ -132,7 +132,7 @@
     "showOnDisplay": "",
     "showIcon": true,
     "displayAsGraph": false,
-    "cpuMonitorApp": "Activity Monitor"
+    "cpuMonitorApp": "Top"
   },
   "gpuWidgetOptions": {
     "refreshFrequency": 3000,
