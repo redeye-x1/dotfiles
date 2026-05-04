@@ -2,5 +2,5 @@
 # Format: name=/path/to/directory
 # Usage: cdname (e.g., cddev, cddot)
 
-dev=/Users/magon/development
-dot=/Users/magon/dotfiles
+dev=$HOME/development
+dot=$HOME/dotfiles
