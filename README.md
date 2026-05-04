@@ -9,7 +9,7 @@ My personal macOS development environment setup with automated installation.
 - **Window Management**: AeroSpace tiling window manager with simple-bar status bar
 - **Terminal**: WezTerm (GPU-accelerated) with workspace persistence, pane management, and quick-select
 - **Shell**: Zsh with Powerlevel10k, autosuggestions, syntax highlighting, fuzzy finding, and smart directory jumping
-- **Editor**: Neovim (Kickstart-based) with LSP, Telescope, Harpoon, Copilot, and Nord theme
+- **Editor**: Neovim (Kickstart-based) with LSP, Telescope, Harpoon, and Nord theme
 - **Git**: Productivity-focused `.gitconfig` with aliases, rebase workflow, and conflict memory
 - **Theme**: Nord -- consistently applied across every tool
 
@@ -54,8 +54,7 @@ dotfiles/
 │   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)
 │   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
 │   ├── opencode/          # OpenCode AI assistant config + BMAD agents
-│   ├── yazi/              # Yazi file manager config
-│   └── github-copilot/    # GitHub Copilot config
+│   └── yazi/              # Yazi file manager config
 ├── .ssh/
 │   └── config             # SSH host configuration (multiplexed connections)
 ├── .zshrc                 # Zsh configuration (plugins, aliases, tools)
@@ -219,7 +218,7 @@ Kickstart-based configuration with lazy.nvim plugin manager. Leader key is **Spa
 
 ### Key Plugins
 
-Telescope (fuzzy finder), LSP (TypeScript, Lua, MDX), Treesitter (syntax highlighting), Harpoon (file bookmarks), Flash (motion), Neo-tree (file explorer), Copilot (AI), conform.nvim (formatting), gitsigns (git gutter), which-key (keybinding discovery).
+Telescope (fuzzy finder), LSP (TypeScript, Lua, MDX), Treesitter (syntax highlighting), Harpoon (file bookmarks), Flash (motion), Neo-tree (file explorer), conform.nvim (formatting), gitsigns (git gutter), which-key (keybinding discovery).
 
 ### Key Keymaps
 
