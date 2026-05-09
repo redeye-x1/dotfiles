@@ -36,6 +36,7 @@ alias ...="cd ../.."
 alias ports="lsof -iTCP -sTCP:LISTEN -P -n"
 alias ip="curl -s ifconfig.me"
 alias hs="history 1"
+alias ctg="claude --channels plugin:telegram@claude-plugins-official --dangerously-skip-permissions"
 
 export NVM_DIR="$HOME/.nvm"
 [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && \. "/opt/homebrew/opt/nvm/nvm.sh"
@@ -98,3 +99,4 @@ bindkey '^[[B' history-substring-search-down
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 export MANROFFOPT="-c"
 alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
+export PATH=$PATH:$HOME/.maestro/bin
