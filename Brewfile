@@ -12,6 +12,7 @@ brew "lazygit"
 brew "lazydocker"
 brew "zoxide"
 brew "yazi"
+brew "superfile"
 brew "stow"
 
 # ── Shell plugins ──────────────────────────────────────────────────

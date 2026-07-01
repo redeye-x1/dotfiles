@@ -82,6 +82,22 @@ fi
 # ── Zoxide (smart cd) ─────────────────────────────────────────────
 eval "$(zoxide init zsh)"
 
+# ── superfile (spf): use dotfiles config + cd on quit ─────────────
+spf() {
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    export SPF_LAST_DIR="$HOME/Library/Application Support/superfile/lastdir"
+  else
+    export SPF_LAST_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/superfile/lastdir"
+  fi
+  command spf \
+    -c "$HOME/.config/superfile/config.toml" \
+    --hf "$HOME/.config/superfile/hotkeys.toml" "$@"
+  [ ! -f "$SPF_LAST_DIR" ] || {
+    . "$SPF_LAST_DIR"
+    rm -f -- "$SPF_LAST_DIR" >/dev/null
+  }
+}
+
 # ── fzf shell integration (Ctrl+R, Ctrl+T, Alt+C) ─────────────────
 source <(fzf --zsh)
 export FZF_DEFAULT_OPTS="--color=fg:#D8DEE9,bg:#2E3440,hl:#88C0D0 --color=fg+:#ECEFF4,bg+:#434C5E,hl+:#8FBCBB --color=info:#81A1C1,prompt:#88C0D0,pointer:#88C0D0 --color=marker:#A3BE8C,spinner:#B48EAD,header:#5E81AC"
