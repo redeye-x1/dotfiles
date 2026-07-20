@@ -4,9 +4,11 @@
 # Start AeroSpace at login
 start-at-login = true
 
-# Refresh simple-bar after AeroSpace starts (fixes startup race condition)
+# Start Übersicht after AeroSpace, then refresh with retry so simple-bar reliably
+# appears at login (avoids race where Übersicht isn't ready when refresh fires).
+# Übersicht should be removed from System Settings → Login Items so only this runs it.
 after-startup-command = [
-  'exec-and-forget sleep 5 && osascript -e "tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\""'
+  'exec-and-forget /Users/mago/dotfiles/bin/start-ubersicht.sh'
 ]
 
 # Normalizations. See: https://nikitabobko.github.io/guide#normalization
