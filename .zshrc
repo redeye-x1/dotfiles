@@ -116,3 +116,15 @@ export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 export MANROFFOPT="-c"
 alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
 export PATH=$PATH:$HOME/.maestro/bin
+
+# Added by GitButler installer
+eval "$(but completions zsh)"
+
+# ── Maus-Reporting am Prompt zurücksetzen ──────────────────────────
+# Verhindert, dass hängengebliebenes SGR-Mouse-Tracking (z.B. nach einem
+# Claude-Code-Session-Resume) rohe Sequenzen wie "35;x;yM" ins Terminal
+# schreibt. Betrifft nur die Shell — TUIs (Claude Code) schalten ihren
+# eigenen Maus-Modus beim Start selbst wieder ein.
+autoload -Uz add-zsh-hook
+_reset_mouse_reporting() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l' }
+add-zsh-hook precmd _reset_mouse_reporting
