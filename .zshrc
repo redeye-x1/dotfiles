@@ -119,7 +119,9 @@ alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
 export PATH=$PATH:$HOME/.maestro/bin
 
 # Added by GitButler installer
-eval "$(but completions zsh)"
+if command -v but >/dev/null 2>&1; then
+  eval "$(but completions zsh)"
+fi
 
 # ── Maus-Reporting am Prompt zurücksetzen ──────────────────────────
 # Verhindert, dass hängengebliebenes SGR-Mouse-Tracking (z.B. nach einem
@@ -127,5 +129,12 @@ eval "$(but completions zsh)"
 # schreibt. Betrifft nur die Shell — TUIs (Claude Code) schalten ihren
 # eigenen Maus-Modus beim Start selbst wieder ein.
 autoload -Uz add-zsh-hook
-_reset_mouse_reporting() { printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l' }
+_reset_mouse_reporting() {
+  # Ersten Prompt überspringen: p10k Instant Prompt wertet jeden TTY-Write
+  # als Konsolenausgabe während der Init und warnt sonst. Eine frische Shell
+  # hat ohnehin kein hängengebliebenes Maus-Reporting — der Reset ist erst
+  # ab dem zweiten Prompt (nach einem TUI-Resume) nötig.
+  [[ -n "$_mouse_reset_ready" ]] || { _mouse_reset_ready=1; return; }
+  printf '\e[?1000l\e[?1002l\e[?1003l\e[?1006l\e[?1015l'
+}
 add-zsh-hook precmd _reset_mouse_reporting
