@@ -36,6 +36,7 @@ alias ...="cd ../.."
 alias ports="lsof -iTCP -sTCP:LISTEN -P -n"
 alias ip="curl -s ifconfig.me"
 alias hs="history 1"
+alias cc="claude --dangerously-skip-permissions"
 alias ctg="claude --channels plugin:telegram@claude-plugins-official --dangerously-skip-permissions"
 
 export NVM_DIR="$HOME/.nvm"
