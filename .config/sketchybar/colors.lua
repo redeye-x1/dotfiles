@@ -5,6 +5,9 @@ return {
   main_alt = 0xff2e3440,  -- colorMainAlt
   minor = 0xff4c566a,     -- colorMinor, default widget background
   accent = 0xff88c0d0,    -- colorAccent, focused workspace
+  -- Darker accent for the digit segment of the focused workspace, so the split
+  -- stays readable once the whole pill turns accent-coloured.
+  accent_dark = 0xff6ba3b4,
   red = 0xffbf616a,
   green = 0xffa3be8c,
   yellow = 0xffebcb8b,
