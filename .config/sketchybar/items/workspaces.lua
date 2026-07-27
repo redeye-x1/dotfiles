@@ -129,14 +129,14 @@ local function update()
 end
 
 for i = 1, WORKSPACE_COUNT do
-  -- The digit and its darker field. Its own background sits on top of the
-  -- bracket's, which is what produces the split.
+  -- The digit and its darker field, drawn on top of the bracket's pill as an
+  -- inset chip. See settings.digit_chip_height for why it is not full height.
   digits[i] = sbar.add("item", "workspace." .. i, {
     position = "left",
     background = {
       color = colors.main,
-      corner_radius = settings.item_radius,
-      height = settings.workspace_height,
+      corner_radius = settings.digit_chip_radius,
+      height = settings.digit_chip_height,
     },
     icon = {
       string = tostring(i),

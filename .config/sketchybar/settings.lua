@@ -14,6 +14,13 @@ return {
   item_padding = 9,
   workspace_height = 25,
 
+  -- The digit's field inside a workspace pill. Deliberately lower than the pill
+  -- so it reads as an inset chip: sketchybar has no per-corner radius, so a
+  -- full-height field would round its inner edge too and cut a notch into the
+  -- pill where it meets the app icons.
+  digit_chip_height = 18,
+  digit_chip_radius = 4,
+
   -- The app icon font shipped by the font-sketchybar-app-font cask. Labels use
   -- the :slug: form from helpers/app_icons.lua, which the font turns into a
   -- glyph via ligatures.
