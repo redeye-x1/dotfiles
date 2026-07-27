@@ -15,6 +15,8 @@ wie sie heute sind.
 
 Ausdrücklich **kein** Motiv: das `<redacted>` beim WLAN-Namen. Das ist eine
 TCC-Sperre von macOS 14+ und trifft SketchyBar genauso (siehe Commit `ed5fb36`).
+Sie liess sich nachträglich lösen, aber unabhängig von der Migration — siehe den
+Abschnitt zum WLAN-Namen weiter unten.
 
 ## Ausgangslage
 
@@ -51,7 +53,7 @@ C-Provider laufen als eigene Prozesse und pushen `cpu_update` bzw.
 | Battery | natives Event `power_source_change` + 10s-Tick | nahe 0 |
 | Date/Time | `os.date()` im Lua-Prozess | 0 |
 | Memory | `vm_stat` alle 4s | 1 Shell / 4s |
-| Workspaces | `exec-on-workspace-change`, `front_app_switched`, ggf. `space_windows_change` | nur bei Bedarf |
+| Workspaces | `exec-on-workspace-change`, `on-window-detected`, `on-focus-changed`, `front_app_switched` | nur bei Bedarf |
 
 Fünf der neun Items werden gepusht statt gepollt.
 
@@ -120,18 +122,22 @@ Maschine kaputt gewesen. SF Pro ist über `cask "font-sf-pro"` abgedeckt.
 Die alte Config färbte den CPU-Wert nach Schwellwert ein — das wäre ein
 sichtbarer Unterschied zu heute und entfällt.
 
-**Widget-Pillen** — Hintergrund `#3b4252`, Padding 9 horizontal, Höhe 24,
-abgeleitet aus `.data-widget { padding: 3px 9px; max-height: 30px }`.
+**Widget-Pillen** — Hintergrund einheitlich `#4c566a`, Padding 9 horizontal,
+Höhe 24, abgeleitet aus `.data-widget { padding: 3px 9px; max-height: 30px }`.
 
-**Workspaces** — Höhe 25 aus `.spaces { height: 25px }`, fokussierter Workspace
-mit Akzent-Hintergrund und dunkler Schrift, Workspaces mit Fenstern hell,
-leere Workspaces in `#4c566a`. App-Icons über `helpers/app_icons.lua` und
-`sketchybar-app-font`.
+simple-bar gibt einzelnen Widgets eigene Hintergrundfarben — Battery Magenta,
+Sound Blau, WiFi Rot, Uhrzeit Gelb. Das ist bewusst **nicht** übernommen: alle
+Widgets sollen aussehen wie CPU und Memory. Das ist der einzige Punkt, an dem
+die Bar absichtlich von simple-bar abweicht.
+
+**Workspaces** — Höhe 25 aus `.spaces { height: 25px }`, dieselbe `#4c566a`-Pille
+wie die Datenwidgets, unabhängig davon, ob Fenster darin liegen. Der fokussierte
+Workspace hebt sich über den Akzent-Hintergrund mit dunkler Schrift ab; das ist
+die einzige verbleibende Farbe in der Bar. App-Icons über
+`helpers/app_icons.lua` und `sketchybar-app-font` in Größe 12.
 
 ## Nicht im Umfang
 
-- **WLAN-Name.** Bleibt weg, nur Icon und Verbindungsstatus. Identisch zum
-  heutigen Zustand nach `ed5fb36`.
 - **`dayProgress`.** Der Tagesfortschritt an der Uhr entfällt. Nachrüstbar,
   falls er vermisst wird.
 - **Prozess- und Keyboard-Widget.** Sind in `.simplebarrc` bereits aus.
@@ -173,16 +179,53 @@ simple-bar-Klon-Schritt entfällt.
 
 ## Risiken
 
-**Aerospace liefert keine Fenster-Events.** Workspace-*Wechsel* sind über
-`exec-on-workspace-change` sauber gepusht. Ob `space_windows_change` unter
-Aerospace feuert, ist offen — Aerospace nutzt keine nativen macOS-Spaces,
-sondern blendet Fenster ein und aus. Fällt das aus, ist der Fallback ein
-5-Sekunden-Poll für die App-Icons; das ist immer noch fünfmal seltener als in
-der alten Config. Das muss empirisch geklärt werden, nicht am Reißbrett.
+**Aerospace liefert keine Fenster-Events — erledigt.** Der Entwurf ging von
+einem 5-Sekunden-Poll als Fallback aus. Aerospace 0.20 hat aber einen
+`on-window-detected`-Callback, und Fenster wandern bei dieser Konfiguration
+ausschließlich über die `move-node-to-workspace`-Bindings zwischen Workspaces,
+an die sich der Trigger direkt anhängen lässt. Fürs Schließen gibt es keinen
+Callback, aber der Fokus verlässt das geschlossene Fenster und löst
+`on-focus-changed` aus.
+
+Gemessen: App starten und App beenden schlagen beide nach **1 Sekunde** in der
+Bar auf. Der verbleibende Poll steht auf 30 Sekunden und ist reiner Backstop.
 
 **Zwei Compile-Schritte im Setup.** SbarLua und die C-Provider müssen auf jeder
 Maschine gebaut werden. Schlägt das fehl, startet die Bar nicht. `install.sh`
 muss den Fehler sichtbar machen statt ihn zu verschlucken.
+
+## Korrekturen aus der Umsetzung
+
+Drei Annahmen dieses Entwurfs haben beim Bauen nicht gehalten.
+
+**Die Widgets haben keine einheitliche Pille.** Oben stand, alle Widgets bekämen
+`#3b4252` als Hintergrund. Tatsächlich färbt `noColorInData` in simple-bar nur
+den *Text* weiß, während jedes Widget seine eigene Hintergrundfarbe behält:
+Netstats, CPU, Memory und Datum auf `--minor` (`#4c566a`), Battery auf Magenta,
+Sound auf Blau, WiFi auf Rot, Uhrzeit auf Gelb. Die Widgets setzen ihre Farbe
+deshalb einzeln, `default.lua` liefert nur `--minor` als Vorgabe.
+
+**`outer.top` musste nicht zurückgebaut werden.** Die Monitor-Fallunterscheidung
+`[{ monitor.'built-in' = 10 }, 49]` stand längst wieder in `.aerospace.toml`.
+
+**Lua muss zu SbarLua passen.** SbalLua vendored Lua 5.5 und baut sein Modul
+dagegen. Auf dieser Maschine lag noch Lua 5.4.8 — das Modul dort zu laden endet
+in SIGSEGV, ohne Fehlermeldung und mit leerer Bar. Die Lösung ist schlicht
+`brew upgrade lua`: die aktuelle Formula *ist* 5.5.0, und nichts anderes hängt
+an ihr (`brew uses --installed lua` ist leer, Neovim nutzt `luajit`).
+`sketchybarrc` bleibt damit beim Upstream-Aufbau mit `#!/usr/bin/env lua`.
+
+Die Kopplung bleibt aber bestehen: sobald Homebrew auf 5.6 geht, bevor SbarLua
+nachzieht, kehrt derselbe stille Absturz zurück. `install.sh` vergleicht deshalb
+`LUA_DIR` aus SbarLuas Makefile gegen `lua -v` und bricht bei Abweichung mit
+einer Meldung ab, statt eine leere Bar zu hinterlassen.
+
+Nebenwirkung des Upgrades: Lua 5.5 macht Schleifenvariablen `const`, was Code
+aus 5.4-Beispielen brechen lässt.
+
+Dazu ein Fund, der nichts mit SketchyBar zu tun hat: Homebrew verlangt
+inzwischen `brew trust` für Fremd-Taps. Ohne das scheiterte `install.sh` bereits
+an `borders`, unabhängig von dieser Migration.
 
 ## Rückweg
 

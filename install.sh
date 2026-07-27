@@ -69,6 +69,12 @@ echo ""
 
 # 4. Install Homebrew packages via Brewfile
 echo "Step 4: Installing Homebrew packages from Brewfile..."
+
+# Homebrew refuses to load formulae from third-party taps until they are
+# trusted, and both borders and sketchybar come from this one. Without this the
+# bundle below fails outright.
+brew trust FelixKratz/formulae
+
 brew bundle --file="$DOTFILES_DIR/Brewfile"
 echo "✓ Brewfile packages installed"
 
@@ -87,29 +93,78 @@ echo "Installing Node.js LTS via NVM..."
 nvm install --lts
 nvm use --lts
 
-# Install simple-bar widget
-echo "Installing simple-bar..."
-WIDGETS_DIR="$HOME/Library/Application Support/Übersicht/widgets"
-mkdir -p "$WIDGETS_DIR"
-if [[ -d "$WIDGETS_DIR/simple-bar" ]]; then
-    echo "simple-bar already installed, updating..."
-    cd "$WIDGETS_DIR/simple-bar" && git pull
-else
-    git clone https://github.com/Jean-Tinland/simple-bar.git "$WIDGETS_DIR/simple-bar"
+# Build SbarLua, the Lua binding SketchyBar's config is written in.
+echo "Building SbarLua..."
+SBARLUA_SRC="$(mktemp -d)"
+git clone --depth 1 https://github.com/FelixKratz/SbarLua.git "$SBARLUA_SRC/SbarLua"
+make -C "$SBARLUA_SRC/SbarLua" install
+
+# SbarLua builds its module against the Lua version it vendors. Load that module
+# into a different Lua and the interpreter dies of SIGSEGV -- no error message,
+# just an empty bar. Homebrew's lua currently matches, but it will move on
+# eventually, so check here where the failure is still readable.
+sbarlua_version="$(sed -n 's/^LUA_DIR=lua-\([0-9]*\.[0-9]*\).*/\1/p' \
+    "$SBARLUA_SRC/SbarLua/makefile")"
+system_version="$(lua -v 2>&1 | sed -n 's/^Lua \([0-9]*\.[0-9]*\).*/\1/p')"
+if [[ "$sbarlua_version" != "$system_version" ]]; then
+    echo "ERROR: SbarLua builds against Lua $sbarlua_version but lua is $system_version." >&2
+    echo "       Loading the module would segfault and leave the bar empty." >&2
+    echo "       Install a matching Lua before continuing." >&2
+    exit 1
 fi
+rm -rf "$SBARLUA_SRC"
+echo "✓ SbarLua built (Lua $system_version)"
+
+# Build the C event providers that push cpu and network data into the bar.
+# A silent failure here means those two widgets stay empty forever, so make it
+# stop the install instead.
+echo "Building SketchyBar event providers..."
+if ! make -C "$DOTFILES_DIR/.config/sketchybar/helpers"; then
+    echo "ERROR: failed to build helpers/event_providers." >&2
+    echo "       The cpu and netstats widgets would stay empty." >&2
+    exit 1
+fi
+echo "✓ Event providers built"
+
 cd "$DOTFILES_DIR"
 
 echo "✓ Language runtimes and widgets set up"
 
 echo ""
 
-# 6. Load Borders LaunchAgent
-echo "Step 6: Setting up Borders..."
+# 6. Load Borders LaunchAgent and start SketchyBar
+echo "Step 6: Setting up Borders and SketchyBar..."
 launchctl unload "$HOME/Library/LaunchAgents/com.felixkratz.borders.plist" 2>/dev/null || true
 launchctl load -w "$HOME/Library/LaunchAgents/com.felixkratz.borders.plist"
 echo "✓ Borders LaunchAgent loaded (starts automatically at login)"
+
+brew services restart sketchybar
+echo "✓ SketchyBar started (restarts automatically at login)"
+
+# Let the wifi widget show the network name.
+#
+# macOS 14+ redacts the SSID for processes without Location Services
+# authorization, and it checks the calling binary rather than its parent, so
+# granting sketchybar the permission would not help even if a CLI could hold it.
+# This flag turns the redaction off instead. It survives reboots and only
+# ipconfig honours it -- system_profiler and networksetup stay redacted.
+#
+# Note this lifts the redaction for every process on the machine, not just for
+# sketchybar. Skipping it costs nothing but the network name: the widget falls
+# back to showing the icon alone.
 echo ""
-echo "Note: Enable 'Open at Login' for Übersicht via its menu bar icon"
+echo "The wifi widget can show the network name, which macOS hides by default."
+echo "Enabling it lifts that restriction system-wide and needs sudo."
+read -r -p "Show the wifi network name? [y/N] " reply
+if [[ $reply =~ ^[Yy]$ ]]; then
+    if sudo ipconfig sethidewifiinfo 0; then
+        echo "✓ Wifi network name enabled"
+    else
+        echo "! Could not enable it; the widget will show the icon only" >&2
+    fi
+else
+    echo "Skipped, the wifi widget will show the icon only"
+fi
 
 echo ""
 

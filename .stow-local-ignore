@@ -4,6 +4,7 @@
 
 # Ignore documentation
 ^/README\.md
+^/docs
 
 # Ignore installation scripts
 ^/install\.sh

@@ -6,7 +6,7 @@ My personal macOS development environment setup with automated installation.
 
 - **Automated Installation**: One command to set up everything via `install.sh` + declarative `Brewfile`
 - **Secure SSH Key Management**: Store SSH keys securely in Bitwarden, auto-sync across machines
-- **Window Management**: AeroSpace tiling window manager with simple-bar status bar
+- **Window Management**: AeroSpace tiling window manager with SketchyBar status bar
 - **Terminal**: WezTerm (GPU-accelerated) with workspace persistence, pane management, and quick-select
 - **Shell**: Zsh with Powerlevel10k, autosuggestions, syntax highlighting, fuzzy finding, and smart directory jumping
 - **Editor**: Neovim (Kickstart-based) with LSP, Telescope, Harpoon, and Nord theme
@@ -41,8 +41,8 @@ My personal macOS development environment setup with automated installation.
    - Symlink all dotfiles via GNU Stow
    - Install all packages from the `Brewfile`
    - Set up Node.js LTS via NVM
-   - Install simple-bar widget
-   - Optionally start Ubersicht and Borders
+   - Build SbarLua and the SketchyBar event providers
+   - Start SketchyBar and Borders
 
 3. **Restart your terminal** to apply all changes.
 
@@ -54,6 +54,7 @@ dotfiles/
 │   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)
 │   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
 │   ├── opencode/          # OpenCode AI assistant config + BMAD agents
+│   ├── sketchybar/        # SketchyBar status bar (Lua + C event providers)
 │   └── yazi/              # Yazi file manager config
 ├── .ssh/
 │   └── config             # SSH host configuration (multiplexed connections)
@@ -63,7 +64,7 @@ dotfiles/
 ├── .wezterm.lua           # WezTerm terminal config (Nord theme, resurrect, quick-select)
 ├── .gitconfig             # Git aliases, rebase workflow, diff settings
 ├── .aerospace.toml        # AeroSpace tiling window manager
-├── .simplebarrc           # simple-bar status bar config
+├── .simplebarrc           # simple-bar config, kept as the way back to Übersicht
 ├── .stow-local-ignore     # Files excluded from stow symlinking
 ├── .gitignore             # Prevents committing SSH private keys
 ├── Brewfile               # Declarative Homebrew package list

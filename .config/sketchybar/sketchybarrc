@@ -1,0 +1,5 @@
+#!/usr/bin/env lua
+
+-- Loads the SbarLua module and builds the C event providers.
+require("helpers")
+require("init")

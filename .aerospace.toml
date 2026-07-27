@@ -4,12 +4,9 @@
 # Start AeroSpace at login
 start-at-login = true
 
-# Start Übersicht after AeroSpace, then refresh with retry so simple-bar reliably
-# appears at login (avoids race where Übersicht isn't ready when refresh fires).
-# Übersicht should be removed from System Settings → Login Items so only this runs it.
-after-startup-command = [
-  'exec-and-forget /Users/mago/dotfiles/bin/start-ubersicht.sh'
-]
+# SketchyBar starts on its own via `brew services`, so nothing to launch here.
+# Übersicht is deliberately no longer started: it is still installed as a way
+# back to simple-bar, but leaving it running would draw a second bar on top.
 
 # Normalizations. See: https://nikitabobko.github.io/guide#normalization
 enable-normalization-flatten-containers = true
@@ -18,15 +15,25 @@ enable-normalization-opposite-orientation-for-nested-containers = true
 # Prevent automatic focus following
 automatically-unhide-macos-hidden-apps = false
 
-# Notify simple-bar about workspace and focus changes
+# Notify SketchyBar about workspace and focus changes. AeroSpace emits no window
+# events, so these two triggers are what keeps the workspace app icons current;
+# without them the bar falls back to its 5 second poll.
 on-focus-changed = [
-  "exec-and-forget osascript -e 'tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\"'",
+  'exec-and-forget sketchybar --trigger aerospace_workspace_change',
 ]
 exec-on-workspace-change = [
-  '/bin/zsh',
+  '/bin/bash',
   '-c',
-  '/usr/bin/osascript -e "tell application id \"tracesOf.Uebersicht\" to refresh widget id \"simple-bar-index-jsx\""',
+  'sketchybar --trigger aerospace_workspace_change FOCUSED_WORKSPACE=$AEROSPACE_FOCUSED_WORKSPACE',
 ]
+
+# Fires whenever a new window appears, which is what keeps the workspace app
+# icons current when an app launches. Window closes have no callback, but focus
+# moves away from a closed window, so on-focus-changed covers those in practice.
+# Must stay below the root-level keys above: this is an array of tables, and any
+# bare key after it would be parsed as part of it.
+[[on-window-detected]]
+run = ['exec-and-forget sketchybar --trigger aerospace_workspace_change']
 
 # Gaps between windows
 [gaps]
@@ -63,12 +70,12 @@ ctrl-alt-cmd-5 = 'workspace 5'
 ctrl-alt-cmd-6 = 'workspace 6'
 
 # Move window to workspace
-ctrl-alt-cmd-shift-1 = 'move-node-to-workspace 1'
-ctrl-alt-cmd-shift-2 = 'move-node-to-workspace 2'
-ctrl-alt-cmd-shift-3 = 'move-node-to-workspace 3'
-ctrl-alt-cmd-shift-4 = 'move-node-to-workspace 4'
-ctrl-alt-cmd-shift-5 = 'move-node-to-workspace 5'
-ctrl-alt-cmd-shift-6 = 'move-node-to-workspace 6'
+ctrl-alt-cmd-shift-1 = ['move-node-to-workspace 1', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
+ctrl-alt-cmd-shift-2 = ['move-node-to-workspace 2', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
+ctrl-alt-cmd-shift-3 = ['move-node-to-workspace 3', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
+ctrl-alt-cmd-shift-4 = ['move-node-to-workspace 4', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
+ctrl-alt-cmd-shift-5 = ['move-node-to-workspace 5', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
+ctrl-alt-cmd-shift-6 = ['move-node-to-workspace 6', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
 
 # Toggle floating mode
 ctrl-alt-cmd-space = 'layout floating tiling'
