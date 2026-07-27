@@ -12,7 +12,7 @@ return {
   item_height = 24,
   item_radius = 5,
   item_padding = 9,
-  space_height = 25,
+  workspace_height = 25,
 
   -- The app icon font shipped by the font-sketchybar-app-font cask. Labels use
   -- the :slug: form from helpers/app_icons.lua, which the font turns into a

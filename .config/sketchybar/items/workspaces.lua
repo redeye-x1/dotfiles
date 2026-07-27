@@ -5,7 +5,7 @@ local app_icons_local = require("helpers.app_icons_local")
 
 local WORKSPACE_COUNT = 6
 
-local spaces = {}
+local workspaces = {}
 
 -- Fired by exec-on-workspace-change in .aerospace.toml.
 sbar.add("event", "aerospace_workspace_change")
@@ -63,7 +63,7 @@ local function update()
         background, foreground = colors.minor, colors.dim
       end
 
-      spaces[i]:set({
+      workspaces[i]:set({
         background = { color = background },
         icon = { color = foreground },
         label = {
@@ -81,12 +81,12 @@ local function update()
 end
 
 for i = 1, WORKSPACE_COUNT do
-  spaces[i] = sbar.add("item", "space." .. i, {
+  workspaces[i] = sbar.add("item", "workspace." .. i, {
     position = "left",
     background = {
       color = colors.minor,
       corner_radius = settings.item_radius,
-      height = settings.space_height,
+      height = settings.workspace_height,
     },
     icon = {
       string = tostring(i),
@@ -139,10 +139,10 @@ end
 --
 -- The routine below is a pure backstop for whatever those miss. It is
 -- deliberately slow; the icons should already be right by the time it runs.
-spaces[1]:subscribe(
+workspaces[1]:subscribe(
   { "aerospace_workspace_change", "front_app_switched", "system_woke",
     "forced", "routine" },
   update)
-spaces[1]:set({ update_freq = 30 })
+workspaces[1]:set({ update_freq = 30 })
 
 update()
