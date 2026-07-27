@@ -25,9 +25,6 @@ brew "zsh-completions"
 # ── Terminal ───────────────────────────────────────────────────────
 cask "wezterm"
 
-# ── AI tools ───────────────────────────────────────────────────────
-brew "opencode"
-
 # ── Language runtimes ──────────────────────────────────────────────
 brew "nvm"
 brew "ruby"

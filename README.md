@@ -53,7 +53,6 @@ dotfiles/
 ├── .config/
 │   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)
 │   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
-│   ├── opencode/          # OpenCode AI assistant config + BMAD agents
 │   ├── sketchybar/        # SketchyBar status bar (Lua + C event providers)
 │   └── yazi/              # Yazi file manager config
 ├── .ssh/
