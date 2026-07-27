@@ -142,9 +142,9 @@ die einzige verbleibende Farbe in der Bar. App-Icons über
   falls er vermisst wird.
 - **Prozess- und Keyboard-Widget.** Sind in `.simplebarrc` bereits aus.
 - **Einstellungs-GUI.** SketchyBar hat keine; Konfiguration läuft über Lua.
-- **Entfernen von Übersicht und `.simplebarrc`.** Bleiben vorerst als Rückweg
-  stehen und werden erst nach erfolgreicher Verifikation in einem separaten
-  Commit abgeräumt.
+- **Entfernen von Übersicht und `.simplebarrc`.** Bleiben zunächst als Rückweg
+  stehen. Nachtrag: nach erfolgreicher Verifikation in einem eigenen Commit
+  abgeräumt, siehe unten.
 
 ## Änderungen außerhalb der SketchyBar-Config
 
@@ -232,3 +232,9 @@ an `borders`, unabhängig von dieser Migration.
 Die gesamte Migration geht in einen Commit, sodass ein `git revert` zurück auf
 simple-bar führt. Übersicht und `.simplebarrc` bleiben währenddessen
 installiert.
+
+Nachtrag: dieser Rückweg ist inzwischen zu. Nachdem die Bar einen Neustart
+überstanden hatte, wurden Übersicht, `.simplebarrc`, `bin/start-ubersicht.sh`
+und der Brewfile-Eintrag in einem eigenen Commit entfernt. Ein `git revert`
+stellt jetzt nur noch die Konfiguration wieder her — Übersicht und das
+simple-bar-Widget müssten neu installiert werden.

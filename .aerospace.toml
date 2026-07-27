@@ -5,8 +5,6 @@
 start-at-login = true
 
 # SketchyBar starts on its own via `brew services`, so nothing to launch here.
-# Übersicht is deliberately no longer started: it is still installed as a way
-# back to simple-bar, but leaving it running would draw a second bar on top.
 
 # Normalizations. See: https://nikitabobko.github.io/guide#normalization
 enable-normalization-flatten-containers = true

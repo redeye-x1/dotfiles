@@ -64,7 +64,6 @@ dotfiles/
 ├── .wezterm.lua           # WezTerm terminal config (Nord theme, resurrect, quick-select)
 ├── .gitconfig             # Git aliases, rebase workflow, diff settings
 ├── .aerospace.toml        # AeroSpace tiling window manager
-├── .simplebarrc           # simple-bar config, kept as the way back to Übersicht
 ├── .stow-local-ignore     # Files excluded from stow symlinking
 ├── .gitignore             # Prevents committing SSH private keys
 ├── Brewfile               # Declarative Homebrew package list
