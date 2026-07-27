@@ -19,7 +19,13 @@ local wifi = sbar.add("item", "widgets.wifi", {
   position = "right",
   icon = { string = icons.wifi.connected },
   label = { drawing = false, max_chars = 18, scroll_texts = true },
-  click_script = "open 'x-apple.systempreferences:com.apple.wifi-settings-extension'",
+  -- The pane's real bundle id is com.apple.Network-Settings.extension; the
+  -- wifi-settings-extension one does not exist and just opened System Settings
+  -- wherever it happened to be. No ?Wi-Fi anchor on purpose: that jumps into
+  -- the Wi-Fi section, and the overview of all connections is the more useful
+  -- landing spot.
+  click_script = "open 'x-apple.systempreferences:"
+    .. "com.apple.Network-Settings.extension'",
 })
 
 -- One shell round trip for both the link state and the name. The awk anchors on
