@@ -23,12 +23,12 @@ return {
   -- Lower the alpha byte to dim further; 0xff would be plain white again.
   dim = 0xb2eceff4,
 
-  -- Outline of an empty workspace. Deliberately the same value as `minor`
-  -- rather than a lighter tone of its own: the outline then traces exactly the
-  -- colour the pill would have had if it were filled, and the palette stays
-  -- purely Nord. An invented in-between shade lived here first and matched
-  -- nothing in the theme.
-  outline = 0xff4c566a,
+  -- Outline of an empty workspace. Still nord3, the colour the pill would have
+  -- been filled with, so the outline traces the shape of what is missing -- but
+  -- at 65% opacity. border_width is an integer in sketchybar's source, so 1.5
+  -- is not available: asking for it stores 1 without complaint. Two points at
+  -- reduced opacity is the way to land between the two weights.
+  outline = 0xa64c566a,
 
   with_alpha = function(color, alpha)
     if alpha > 1.0 or alpha < 0.0 then return color end

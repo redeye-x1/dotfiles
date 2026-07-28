@@ -16,7 +16,7 @@ return {
 
   -- Outline thickness of an empty workspace. It has no fill, so 0 here makes
   -- empty workspaces disappear entirely.
-  empty_border_width = 1,
+  empty_border_width = 2,
 
   -- Prefixed to every click action so that clicking anything dismisses an open
   -- popup. sketchybar has no global click event, so each item has to say this
