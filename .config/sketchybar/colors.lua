@@ -5,11 +5,6 @@ return {
   main_alt = 0xff2e3440,  -- colorMainAlt
   minor = 0xff4c566a,     -- colorMinor, default widget background
   accent = 0xff88c0d0,    -- colorAccent, focused workspace
-  -- Digit chip of the focused workspace. nord10, two steps down the Frost scale
-  -- from the pill's nord8, mirroring how the unfocused chip is nord1 inside a
-  -- nord3 pill. An invented in-between tone sat here first and belonged to no
-  -- palette at all.
-  accent_dark = 0xff5e81ac,
   red = 0xffbf616a,
   green = 0xffa3be8c,
   yellow = 0xffebcb8b,

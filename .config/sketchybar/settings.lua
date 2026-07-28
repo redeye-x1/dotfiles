@@ -14,20 +14,6 @@ return {
   item_padding = 9,
   workspace_height = 25,
 
-  -- The digit's field inside a workspace pill, drawn as an inset chip rather
-  -- than a flush segment. sketchybar has no radius per corner, so a field that
-  -- filled the pill's height would round its inner edge as well and cut a notch
-  -- where it meets the app icons -- and squaring it off instead leaves its
-  -- corners poking out of the pill's rounded ones. Sitting the chip inside
-  -- avoids the question: rounding on all four corners is then what you expect.
-  --
-  -- 17 against the pill's 25 leaves exactly 4 above and below. 18 leaves 3.5,
-  -- rounds to 4 and 3, and reads as the chip sitting low.
-  digit_chip_height = 17,
-  digit_chip_radius = 4,
-  -- Pill showing to the left of the chip, so its rounded corner does not sit
-  -- directly on the pill's with no air between the two curves.
-  digit_chip_inset = 4,
   -- Outline thickness of an empty workspace. It has no fill, so 0 here makes
   -- empty workspaces disappear entirely.
   empty_border_width = 1,

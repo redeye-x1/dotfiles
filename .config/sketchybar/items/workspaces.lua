@@ -10,11 +10,7 @@ local WORKSPACE_COUNT = 6
 local BADGE_APP = "Slack"
 local BADGE_POLL_SECONDS = 7
 
--- Split pill: the digit sits in its own darker segment, the app icons in the
--- body, and the bracket draws the pill around both. An empty workspace has no
--- body, so it collapses to the dark digit chip on its own.
-local digits = {}
-local apps = {}
+local workspaces = {}
 local badges = {}
 
 -- Which workspace currently holds BADGE_APP, and whether it has a badge. The
@@ -91,29 +87,22 @@ local function update()
       local icons = icons_by_workspace[key]
       local is_focused = focused == key
 
-      -- Every workspace keeps the same pill the data widgets on the right have.
-      -- Only the focused one stands out, via the accent colour.
-      -- background: the pill, segment: the digit's chip on top of it. An empty
-      -- workspace drops both fills and shows an outline instead, so a glance
-      -- separates "something runs here" from "nothing does" before you read a
-      -- single digit. A focused workspace stays filled even when empty --
-      -- otherwise focus would be the one thing the outline hides.
+      -- One flat pill per workspace, the same one the data widgets wear. An
+      -- empty workspace drops the fill and shows an outline instead, so a
+      -- glance separates "something runs here" from "nothing does" before you
+      -- read a single digit. A focused workspace stays filled even when empty,
+      -- since focus is the one thing an outline would hide.
       --
-      -- border_width has to be set in every branch: sketchybar keeps whatever
-      -- was set last, so leaving it out would carry the outline over to a
-      -- workspace that just gained a window.
-      local background, segment, foreground, digit_colour, border
+      -- border_width is set in every branch on purpose: sketchybar keeps
+      -- whatever it was last given, so omitting it would carry the outline over
+      -- to a workspace that had just gained a window.
+      local background, foreground, border
       if is_focused then
-        background, segment = colors.accent, colors.accent_dark
-        foreground, digit_colour = colors.black, colors.black
-        border = 0
+        background, foreground, border = colors.accent, colors.black, 0
       elseif icons then
-        background, segment = colors.minor, colors.main
-        foreground, digit_colour = colors.dim, colors.dim
-        border = 0
+        background, foreground, border = colors.minor, colors.dim, 0
       else
-        background, segment = colors.transparent, colors.transparent
-        foreground, digit_colour = colors.dim, colors.dim
+        background, foreground = colors.transparent, colors.dim
         border = settings.empty_border_width
       end
 
@@ -125,16 +114,15 @@ local function update()
         },
       })
 
-      digits[i]:set({
-        background = { color = segment },
-        icon = { color = digit_colour },
-      })
-
-      apps[i]:set({
-        label = { string = icons or "", color = foreground },
-        -- Without a body the bracket wraps the digit segment alone, which is
-        -- what makes an empty workspace read as a small chip.
-        drawing = icons ~= nil,
+      workspaces[i]:set({
+        icon = { color = foreground },
+        label = {
+          string = icons or "",
+          color = foreground,
+          -- An empty label still contributes its padding, which would leave the
+          -- digit of an empty workspace off-centre in its outline.
+          drawing = icons ~= nil,
+        },
       })
     end
 
@@ -143,49 +131,32 @@ local function update()
 end
 
 for i = 1, WORKSPACE_COUNT do
-  -- The digit and its darker field, drawn on top of the bracket's pill as an
-  -- inset chip. See settings.digit_chip_height for why it is not full height.
-  digits[i] = sbar.add("item", "workspace." .. i, {
+  -- Digit and app icons in one item: the pill is flat, so there is nothing to
+  -- separate them into.
+  workspaces[i] = sbar.add("item", "workspace." .. i, {
     position = "left",
-    background = {
-      color = colors.main,
-      corner_radius = settings.digit_chip_radius,
-      height = settings.digit_chip_height,
-    },
+    -- The bracket below draws the pill.
+    background = { drawing = false },
     icon = {
       string = tostring(i),
       -- Unfocused is the right initial state: update() corrects it right away.
       color = colors.dim,
-      -- Equal on both sides so the digit sits centred in its field.
-      padding_left = 8,
-      padding_right = 8,
+      -- Equal on both sides so an empty workspace centres its digit inside its
+      -- outline. The gap to the app icons is added on the label instead,
+      -- because this padding applies whether or not any icons follow.
+      padding_left = 9,
+      padding_right = 9,
       font = {
         family = settings.font.text,
         style = settings.font.style_map["Semibold"],
         size = 13.0,
       },
     },
-    label = { drawing = false },
-    -- This padding falls inside the bracket, so it shows as pill colour: it is
-    -- what gives the chip its left margin. The gap between whole pills comes
-    -- from the gap item below, not from here.
-    padding_left = settings.digit_chip_inset,
-    padding_right = 0,
-    click_script = "aerospace workspace " .. i,
-  })
-
-  -- The body. Hidden when the workspace is empty, which leaves the bracket
-  -- wrapping the digit field alone.
-  apps[i] = sbar.add("item", "workspace." .. i .. ".apps", {
-    position = "left",
-    drawing = false,
-    background = { drawing = false },
-    icon = { drawing = false },
     label = {
       string = "",
       color = colors.dim,
-      padding_left = 8,
-      padding_right = 8,
+      padding_left = 3,
+      padding_right = 9,
       -- The style must be spelled out. sketchybar-app-font ships Regular only,
       -- and inheriting the Semibold from default.lua asks for a face that does
       -- not exist, which drops the label to a fallback font that renders the
@@ -197,6 +168,9 @@ for i = 1, WORKSPACE_COUNT do
       },
       y_offset = settings.app_icon_y_offset,
     },
+    -- No padding on any bracket member: it sits inside the bracket and would
+    -- show as a sliver of pill beside the content. The gap item below is what
+    -- separates one pill from the next.
     padding_left = 0,
     padding_right = 0,
     click_script = "aerospace workspace " .. i,
@@ -239,8 +213,7 @@ for i = 1, WORKSPACE_COUNT do
   end
 
   sbar.add("bracket", "workspace." .. i .. ".bracket",
-    { "workspace." .. i, "workspace." .. i .. ".apps",
-      "workspace." .. i .. ".badge" }, {
+    { "workspace." .. i, "workspace." .. i .. ".badge" }, {
       background = {
         color = colors.minor,
         corner_radius = settings.item_radius,
@@ -257,11 +230,11 @@ end
 --
 -- The routine below is a pure backstop for whatever those miss. It is
 -- deliberately slow; the icons should already be right by the time it runs.
-digits[1]:subscribe(
+workspaces[1]:subscribe(
   { "aerospace_workspace_change", "front_app_switched", "system_woke",
     "forced", "routine" },
   update)
-digits[1]:set({ update_freq = 30 })
+workspaces[1]:set({ update_freq = 30 })
 
 -- Dock badges emit no event, so this is the one thing in the bar that polls.
 -- It is kept off the workspace update on purpose: that one runs on every focus
