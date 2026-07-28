@@ -194,16 +194,19 @@ for i = 1, WORKSPACE_COUNT do
       color = colors.red,
       font = { size = 6.0 },
       padding_left = 0,
-      padding_right = 4,
+      -- Pushes the dot left, off the pill's edge and onto the icon's corner.
+      -- Grows in step with padding_left below so the badge stays free of charge.
+      padding_right = 7,
     },
     label = { drawing = false },
     -- Overlaps the app icon before it instead of sitting beside it, and costs no
     -- width doing so: the negative padding cancels the glyph plus its right
     -- padding exactly. update() appends the badge app's glyph last, so the icon
     -- being overlapped is always the right one.
-    -- -11 cancels the 7pt glyph plus its 4pt right padding exactly, so the
-    -- badge contributes no width. Change the size and this has to follow.
-    padding_left = -11,
+    -- -14 cancels the 7pt glyph plus its 7pt right padding exactly, so the
+    -- badge contributes no width. All three of size, padding_right and this
+    -- have to move together, or it starts costing pill again.
+    padding_left = -14,
     padding_right = 0,
     y_offset = 5,
     click_script = settings.close_popups .. "; aerospace workspace " .. i,
