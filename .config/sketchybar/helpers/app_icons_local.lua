@@ -15,6 +15,22 @@ return {
   -- be worse than generic.
   ["Superset"] = ":terminal:",
 
+  -- Pencil, the .pen design editor. The font has nothing named after a pencil or
+  -- a brush, so this borrows Notability's glyph, which draws only the tool and no
+  -- wordmark -- unlike the design-app alternatives (:figma: is the F, :sketch: the
+  -- diamond, :illustrator: literally "Ai"). Notability is not installed here, so
+  -- the glyph cannot end up on two pills at once.
+  --
+  -- Drawing our own glyph and merging it into the font was tried and dropped: it
+  -- worked, but the font is owned by the cask, so every upgrade wiped the glyph
+  -- and left the literal text ":pen:" in the pill until a script was rerun.
+  ["Pen"] = ":notability:",
+
+  -- The font has no Zoho glyph, and the app reports itself with the "- Desktop"
+  -- suffix, so the upstream ["Mail"] entry never matches. Generic envelope, the
+  -- same one Canary/MailMate/Spark get.
+  ["Zoho Mail - Desktop"] = ":mail:",
+
   -- Amphetamine deliberately stays on :default:. The font has no keep-awake or
   -- caffeine glyph, and :clock: or :timery: would say the wrong thing.
 }
