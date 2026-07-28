@@ -5,9 +5,11 @@ return {
   main_alt = 0xff2e3440,  -- colorMainAlt
   minor = 0xff4c566a,     -- colorMinor, default widget background
   accent = 0xff88c0d0,    -- colorAccent, focused workspace
-  -- Darker accent for the digit segment of the focused workspace, so the split
-  -- stays readable once the whole pill turns accent-coloured.
-  accent_dark = 0xff6ba3b4,
+  -- Digit chip of the focused workspace. nord10, two steps down the Frost scale
+  -- from the pill's nord8, mirroring how the unfocused chip is nord1 inside a
+  -- nord3 pill. An invented in-between tone sat here first and belonged to no
+  -- palette at all.
+  accent_dark = 0xff5e81ac,
   red = 0xffbf616a,
   green = 0xffa3be8c,
   yellow = 0xffebcb8b,
@@ -26,8 +28,12 @@ return {
   -- Lower the alpha byte to dim further; 0xff would be plain white again.
   dim = 0xb2eceff4,
 
-  -- Outline of an empty workspace, which has no fill at all.
-  outline = 0xff5a6478,
+  -- Outline of an empty workspace. Deliberately the same value as `minor`
+  -- rather than a lighter tone of its own: the outline then traces exactly the
+  -- colour the pill would have had if it were filled, and the palette stays
+  -- purely Nord. An invented in-between shade lived here first and matched
+  -- nothing in the theme.
+  outline = 0xff4c566a,
 
   with_alpha = function(color, alpha)
     if alpha > 1.0 or alpha < 0.0 then return color end
