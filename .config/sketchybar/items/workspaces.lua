@@ -93,23 +93,37 @@ local function update()
 
       -- Every workspace keeps the same pill the data widgets on the right have.
       -- Only the focused one stands out, via the accent colour.
-      -- background: the body, segment: the digit's own field behind it.
-      -- An empty workspace takes the segment colour throughout so the chip
-      -- reads as one piece.
-      local background, segment, foreground, digit_colour
+      -- background: the pill, segment: the digit's chip on top of it. An empty
+      -- workspace drops both fills and shows an outline instead, so a glance
+      -- separates "something runs here" from "nothing does" before you read a
+      -- single digit. A focused workspace stays filled even when empty --
+      -- otherwise focus would be the one thing the outline hides.
+      --
+      -- border_width has to be set in every branch: sketchybar keeps whatever
+      -- was set last, so leaving it out would carry the outline over to a
+      -- workspace that just gained a window.
+      local background, segment, foreground, digit_colour, border
       if is_focused then
         background, segment = colors.accent, colors.accent_dark
         foreground, digit_colour = colors.black, colors.black
+        border = 0
       elseif icons then
         background, segment = colors.minor, colors.main
         foreground, digit_colour = colors.dim, colors.dim
+        border = 0
       else
-        background, segment = colors.main, colors.main
+        background, segment = colors.transparent, colors.transparent
         foreground, digit_colour = colors.dim, colors.dim
+        border = settings.empty_border_width
       end
 
-      sbar.set("workspace." .. i .. ".bracket",
-        { background = { color = background } })
+      sbar.set("workspace." .. i .. ".bracket", {
+        background = {
+          color = background,
+          border_width = border,
+          border_color = colors.outline,
+        },
+      })
 
       digits[i]:set({
         background = { color = segment },

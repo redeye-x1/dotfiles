@@ -26,6 +26,9 @@ return {
   -- Lower the alpha byte to dim further; 0xff would be plain white again.
   dim = 0xb2eceff4,
 
+  -- Outline of an empty workspace, which has no fill at all.
+  outline = 0xff5a6478,
+
   with_alpha = function(color, alpha)
     if alpha > 1.0 or alpha < 0.0 then return color end
     return (color & 0x00ffffff) | (math.floor(alpha * 255.0) << 24)
