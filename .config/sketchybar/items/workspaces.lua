@@ -102,7 +102,9 @@ local function update()
       elseif icons then
         background, foreground, border = colors.minor, colors.dim, 0
       else
-        background, foreground = colors.transparent, colors.dim
+        -- Digit in the outline colour, so an empty workspace is one tone
+        -- throughout rather than a bright number in a faint frame.
+        background, foreground = colors.transparent, colors.outline
         border = settings.empty_border_width
       end
 
