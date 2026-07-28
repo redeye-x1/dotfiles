@@ -57,6 +57,10 @@ local function update()
 
     local focused, seen_separator = nil, false
     local icons_by_workspace = {}
+    -- The badge app's glyph is held back and appended last, so the dot that
+    -- overlaps it always lands on the right one. Aerospace lists windows in its
+    -- own order, which would otherwise put Slack anywhere in the row.
+    local badge_glyph = {}
     local seen_apps = {}
     badge_workspace = nil
 
@@ -70,13 +74,17 @@ local function update()
       else
         local workspace, app = line:match("^(.-)|(.*)$")
         if workspace and app and app ~= "" then
-          if app == BADGE_APP then badge_workspace = workspace end
           -- hideDuplicateAppsInSpaces = true in .simplebarrc
           local key = workspace .. "|" .. app
           if not seen_apps[key] then
             seen_apps[key] = true
-            icons_by_workspace[workspace] =
-              (icons_by_workspace[workspace] or "") .. icon_for(app)
+            if app == BADGE_APP then
+              badge_workspace = workspace
+              badge_glyph[workspace] = icon_for(app)
+            else
+              icons_by_workspace[workspace] =
+                (icons_by_workspace[workspace] or "") .. icon_for(app)
+            end
           end
         end
       end
@@ -85,6 +93,7 @@ local function update()
     for i = 1, WORKSPACE_COUNT do
       local key = tostring(i)
       local icons = icons_by_workspace[key]
+      if badge_glyph[key] then icons = (icons or "") .. badge_glyph[key] end
       local is_focused = focused == key
 
       -- One flat pill per workspace, the same one the data widgets wear. An
@@ -183,14 +192,20 @@ for i = 1, WORKSPACE_COUNT do
     icon = {
       string = "􀀁",
       color = colors.red,
-      font = { size = 8.0 },
+      font = { size = 6.0 },
       padding_left = 0,
-      padding_right = 8,
-      y_offset = 1,
+      padding_right = 4,
     },
     label = { drawing = false },
-    padding_left = 0,
+    -- Overlaps the app icon before it instead of sitting beside it, and costs no
+    -- width doing so: the negative padding cancels the glyph plus its right
+    -- padding exactly. update() appends the badge app's glyph last, so the icon
+    -- being overlapped is always the right one.
+    -- -11 cancels the 7pt glyph plus its 4pt right padding exactly, so the
+    -- badge contributes no width. Change the size and this has to follow.
+    padding_left = -11,
     padding_right = 0,
+    y_offset = 5,
     click_script = settings.close_popups .. "; aerospace workspace " .. i,
   })
 
