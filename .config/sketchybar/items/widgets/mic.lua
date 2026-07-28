@@ -16,35 +16,24 @@ local mic = sbar.add("item", "widgets.mic", {
   -- another app -- Zoom, Slack -- shows up here within the interval; muting
   -- from this button is immediate.
   update_freq = 15,
-  icon = { string = icons.mic.on },
-  -- The dot marks a live microphone, so it shows on the state you want to
-  -- notice. No second item needed: the label carries its own colour, so it can
-  -- be red while the icon stays white.
-  label = {
-    string = "􀀁",
-    color = colors.red,
-    font = { size = 8.0 },
-    drawing = false,
-    padding_left = 0,
-    padding_right = settings.item_padding,
-    y_offset = 1,
-  },
+  icon = { string = icons.mic.on, padding_right = settings.item_padding },
+  label = { drawing = false },
 })
 
 -- The level to come back to. Seeded from whatever the input is at when the bar
 -- starts, so a mic already turned down does not get restored to full blast.
 local last_level = nil
 
+-- A live microphone turns the whole pill red. It is the loudest thing in the
+-- bar, which is the point: everything else here reports, this one warns.
+--
+-- Swap colors.red for colors.minor here and set the icon colour to red instead
+-- if that turns out to be too much -- the signal is the same, only quieter.
 local function render(level)
   local live = level > 0
   mic:set({
-    icon = {
-      string = live and icons.mic.on or icons.mic.off,
-      -- Muted, the icon is alone in the pill and needs even padding. With the
-      -- dot beside it, this becomes the gap between the two.
-      padding_right = live and 5 or settings.item_padding,
-    },
-    label = { drawing = live },
+    icon = { string = live and icons.mic.on or icons.mic.off },
+    background = { color = live and colors.red or colors.minor },
   })
   if live then last_level = level end
 end
