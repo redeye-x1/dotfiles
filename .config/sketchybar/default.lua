@@ -1,5 +1,6 @@
 local colors = require("colors")
 local settings = require("settings")
+local hover = require("helpers.hover")
 
 -- Shared defaults for every item. Individual widgets override background.color
 -- only, because simple-bar gives each widget its own colour rather than one
@@ -36,7 +37,11 @@ sbar.default({
     height = settings.item_height,
     corner_radius = settings.item_radius,
     color = colors.minor,
-    border_width = 0,
+    -- A ring is kept ready on every item, invisible until the pointer arrives.
+    -- See helpers/hover.lua; giving it a width up front means the hover only
+    -- has to change a colour and cannot shift the layout.
+    border_width = 1,
+    border_color = hover.ring,
   },
 
   padding_left = settings.paddings,

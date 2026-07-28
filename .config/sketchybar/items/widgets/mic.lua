@@ -1,6 +1,7 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
+local hover = require("helpers.hover")
 
 -- Microphone mute, as a button rather than a readout: icon only, click toggles.
 --
@@ -63,3 +64,5 @@ mic:subscribe("mouse.clicked", function()
         function() render(target) end)
     end)
 end)
+
+hover.attach(mic)

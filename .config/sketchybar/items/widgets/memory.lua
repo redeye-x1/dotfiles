@@ -1,5 +1,6 @@
 local icons = require("icons")
 local settings = require("settings")
+local hover = require("helpers.hover")
 
 local memory = sbar.add("item", "widgets.memory", {
   position = "right",
@@ -22,3 +23,5 @@ memory:subscribe({ "routine", "forced", "system_woke" }, function()
       end
     end)
 end)
+
+hover.attach(memory)

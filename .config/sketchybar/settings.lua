@@ -15,8 +15,9 @@ return {
   workspace_height = 25,
 
   -- Outline thickness of an empty workspace. It has no fill, so 0 here makes
-  -- empty workspaces disappear entirely.
-  empty_border_width = 1,
+  -- empty workspaces disappear entirely. Thicker than the hover ring on
+  -- purpose: this one is a state, that one is a transient hint.
+  empty_border_width = 2,
 
   -- Prefixed to every click action so that clicking anything dismisses an open
   -- popup. sketchybar has no global click event, so each item has to say this

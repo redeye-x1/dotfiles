@@ -1,5 +1,6 @@
 local icons = require("icons")
 local settings = require("settings")
+local hover = require("helpers.hover")
 
 -- macOS 14+ redacts the SSID for processes without Location Services
 -- authorization, and the check runs against the calling binary rather than its
@@ -63,3 +64,5 @@ wifi:subscribe({ "wifi_change", "forced", "system_woke" }, function()
     })
   end)
 end)
+
+hover.attach(wifi)
