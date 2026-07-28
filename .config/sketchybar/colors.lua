@@ -23,20 +23,21 @@ return {
   -- Lower the alpha byte to dim further; 0xff would be plain white again.
   dim = 0xb2eceff4,
 
-  -- Frame and digit of an empty workspace, both on this one value so the whole
-  -- thing recedes as a single tone.
+  -- Frame of an empty workspace. nord3, the colour the pill would have been
+  -- filled with, so the outline traces the shape of what is missing -- at 65%
+  -- so it does not read as heavily as a filled edge would.
   --
-  -- White at 40% rather than nord3, which would have been the tidier idea --
-  -- the outline tracing the colour the pill would have been filled with. nord3
-  -- is simply too dark for a digit on the bar: it renders as #424a5b even at
-  -- full opacity, and no amount of alpha lifts it, since alpha only moves it
-  -- toward the background. This lands at #7a7f88, a clear step up while staying
-  -- far below the #bbc1ca of an occupied workspace.
-  --
-  -- Note for the frame: border_width is an integer in sketchybar's source, so
-  -- 1.5 is not available -- asking for it stores 1 without complaint. Two
-  -- points at reduced opacity is how to land between the two weights.
-  outline = 0x66eceff4,
+  -- border_width is an integer in sketchybar's source, so 1.5 is not available:
+  -- asking for it stores 1 without complaint. Two points at reduced opacity is
+  -- how to land between the two weights.
+  outline = 0xa64c566a,
+
+  -- Digit of an empty workspace, brighter than the frame around it on purpose.
+  -- Matching the frame reads as one quiet tone but leaves the number barely
+  -- there: nord3 renders as #424a5b on the bar, and opacity cannot lift it,
+  -- since alpha only moves a colour toward its background. White at 40% gives
+  -- #7a7f88, well below the #bbc1ca of an occupied workspace.
+  empty_digit = 0x66eceff4,
 
   with_alpha = function(color, alpha)
     if alpha > 1.0 or alpha < 0.0 then return color end
