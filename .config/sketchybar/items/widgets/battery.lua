@@ -1,6 +1,5 @@
 local icons = require("icons")
 local settings = require("settings")
-local hover = require("helpers.hover")
 
 local battery = sbar.add("item", "widgets.battery", {
   position = "right",
@@ -40,5 +39,3 @@ battery:subscribe({ "routine", "forced", "system_woke", "power_source_change" },
           end)
       end)
   end)
-
-hover.attach(battery)

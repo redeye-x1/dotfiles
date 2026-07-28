@@ -1,7 +1,6 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
-local hover = require("helpers.hover")
 
 -- Date and time in one pill, replacing the two they used to occupy. Measured
 -- before the merge: 93pt for the date, 72pt for the time, plus the gap.
@@ -46,5 +45,3 @@ datetime:subscribe({ "routine", "forced", "system_woke" }, function()
     label = os.date("%a %d %b"),
   })
 end)
-
-hover.attach(datetime)

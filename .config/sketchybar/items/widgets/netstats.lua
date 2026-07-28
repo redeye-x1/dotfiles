@@ -1,7 +1,6 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
-local hover = require("helpers.hover")
 
 -- simple-bar sampled this by running `netstat -w1` for 1.5 seconds every 2
 -- seconds (lib/scripts/netstats.sh). The C provider reads the interface
@@ -59,5 +58,3 @@ netstats:subscribe("network_update", function(env)
       .. " " .. icons.network.upload .. format_rate(up),
   })
 end)
-
-hover.attach(netstats)

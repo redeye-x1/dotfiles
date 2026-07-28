@@ -1,7 +1,6 @@
 local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
-local hover = require("helpers.hover")
 
 -- The volume slider used to sit in the bar, and the pill it needed came to
 -- 135pt against the 62 a plain widget like cpu takes. It now lives in a popup:
@@ -127,5 +126,3 @@ end)
 sound:subscribe("front_app_switched", function()
   sound:set({ popup = { drawing = "off" } })
 end)
-
-hover.attach(sound)

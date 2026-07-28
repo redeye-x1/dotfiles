@@ -1,6 +1,5 @@
 local icons = require("icons")
 local settings = require("settings")
-local hover = require("helpers.hover")
 
 -- The C provider pushes cpu_update every 2 seconds, matching
 -- cpuWidgetOptions.refreshFrequency = 2000 in .simplebarrc. Nothing polls.
@@ -18,5 +17,3 @@ cpu:subscribe("cpu_update", function(env)
   -- env also carries user_load and sys_load
   cpu:set({ label = env.total_load .. "%" })
 end)
-
-hover.attach(cpu)
