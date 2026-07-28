@@ -2,10 +2,31 @@ local colors = require("colors")
 local icons = require("icons")
 local settings = require("settings")
 
--- Items with position "right" are appended leftwards, so the slider is added
--- first to end up to the right of the icon.
-local slider = sbar.add("slider", "widgets.sound.slider", 72, {
+-- The volume slider used to sit in the bar, and the pill it needed came to
+-- 135pt against the 62 a plain widget like cpu takes. It now lives in a popup:
+-- the bar shows the level as a number, clicking opens the slider underneath.
+local sound = sbar.add("item", "widgets.sound", {
   position = "right",
+  icon = { string = icons.volume._100 },
+  label = { string = "--%", width = 34, align = "right" },
+  popup = {
+    align = "center",
+    y_offset = 4,
+    -- Without this the row inherits the bar's 39 and the slider floats in a
+    -- panel twice as tall as it needs.
+    height = 26,
+    background = {
+      color = colors.main,
+      corner_radius = settings.item_radius,
+      border_width = 1,
+      border_color = colors.minor,
+      drawing = true,
+    },
+  },
+})
+
+local slider = sbar.add("slider", "widgets.sound.slider", 130, {
+  position = "popup.widgets.sound",
   updates = true,
   background = { drawing = false },
   slider = {
@@ -22,27 +43,9 @@ local slider = sbar.add("slider", "widgets.sound.slider", 72, {
       color = colors.white,
     },
   },
-  padding_left = 4,
+  padding_left = settings.item_padding,
   padding_right = settings.item_padding,
 })
-
-local sound = sbar.add("item", "widgets.sound", {
-  position = "right",
-  icon = { string = icons.volume._100, padding_right = 0 },
-  label = { drawing = false },
-  background = { drawing = false },
-  padding_right = 0,
-})
-
--- One pill around both, since each item draws no background of its own.
-sbar.add("bracket", "widgets.sound.bracket",
-  { "widgets.sound", "widgets.sound.slider" }, {
-    background = {
-      color = colors.minor,
-      height = settings.item_height,
-      corner_radius = settings.item_radius,
-    },
-  })
 
 -- One osascript invocation for both values rather than two.
 local QUERY = "osascript -e 'set v to get volume settings' "
@@ -57,7 +60,10 @@ local function render(volume, muted)
     elseif volume > 0 then icon = icons.volume._10
     end
   end
-  sound:set({ icon = { string = icon } })
+  sound:set({
+    icon = { string = icon },
+    label = { string = volume .. "%" },
+  })
   -- A muted output still has a volume, but showing it filled would contradict
   -- the crossed-out icon.
   slider:set({ slider = { percentage = muted and 0 or volume } })
@@ -76,7 +82,19 @@ end
 sound:subscribe({ "volume_change", "forced", "system_woke" }, refresh)
 slider:subscribe({ "volume_change", "forced", "system_woke" }, refresh)
 
--- Dragging tracks the mouse continuously but only fires once on release.
+-- Left click opens the slider, right click still mutes: hiding mute inside the
+-- popup would make the quickest action the slowest one.
+sound:subscribe("mouse.clicked", function(env)
+  if env.BUTTON == "right" then
+    sbar.exec(
+      "osascript -e 'set volume output muted not (output muted of (get volume settings))'",
+      function() refresh(nil) end)
+    return
+  end
+  sound:set({ popup = { drawing = "toggle" } })
+end)
+
+-- Dragging tracks the mouse but only fires once on release.
 slider:subscribe("mouse.clicked", function(env)
   local percentage = tonumber(env.PERCENTAGE)
   if not percentage then return end
@@ -85,8 +103,8 @@ slider:subscribe("mouse.clicked", function(env)
     .. "-e 'set volume output volume " .. percentage .. "'")
 end)
 
--- Clicking the speaker toggles mute, which the slider then reflects.
-sound:subscribe("mouse.clicked", function()
-  sbar.exec("osascript -e 'set volume output muted not (output muted of (get volume settings))'",
-    function() refresh(nil) end)
+-- Anything else being clicked in the bar dismisses the popup, so it cannot be
+-- left hanging open.
+sound:subscribe("mouse.exited.global", function()
+  sound:set({ popup = { drawing = false } })
 end)
