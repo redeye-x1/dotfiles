@@ -7,7 +7,7 @@ local battery = sbar.add("item", "widgets.battery", {
   -- power_source_change event so plugging in registers immediately.
   update_freq = 10,
   icon = { string = icons.battery._100 },
-  label = { string = "--%", width = 34, align = "right" },
+  label = { string = "--%", width = settings.value_width, align = "right" },
   -- No action of its own, but a click here should still dismiss a popup.
   click_script = settings.close_popups,
 })

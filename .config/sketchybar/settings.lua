@@ -18,6 +18,13 @@ return {
   -- empty workspaces disappear entirely.
   empty_border_width = 2,
 
+  -- Width of a percentage readout. "100%" measures exactly 34 points, so a
+  -- 34-wide box leaves it no air at all and the digits butt straight against
+  -- the icon -- align is "right", so the overflow goes that way. Fixed rather
+  -- than dynamic on purpose: a box that grows as the value does would shift the
+  -- whole bar every time the battery ticks down.
+  value_width = 40,
+
   -- Prefixed to every click action so that clicking anything dismisses an open
   -- popup. sketchybar has no global click event, so each item has to say this
   -- for itself; the regex spares us naming them one by one.

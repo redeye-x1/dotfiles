@@ -6,7 +6,7 @@ local memory = sbar.add("item", "widgets.memory", {
   -- memoryWidgetOptions.refreshFrequency = 4000
   update_freq = 4,
   icon = { string = icons.memory },
-  label = { string = "--%", width = 34, align = "right" },
+  label = { string = "--%", width = settings.value_width, align = "right" },
   -- memoryWidgetOptions.memoryMonitorApp = "Activity Monitor"
   click_script = settings.close_popups .. "; open -a 'Activity Monitor'",
 })

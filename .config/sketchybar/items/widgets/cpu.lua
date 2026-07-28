@@ -9,7 +9,7 @@ sbar.exec("killall cpu_load >/dev/null 2>&1; "
 local cpu = sbar.add("item", "widgets.cpu", {
   position = "right",
   icon = { string = icons.cpu },
-  label = { string = "--%", width = 34, align = "right" },
+  label = { string = "--%", width = settings.value_width, align = "right" },
   click_script = settings.close_popups .. "; open -a 'Activity Monitor'",
 })
 

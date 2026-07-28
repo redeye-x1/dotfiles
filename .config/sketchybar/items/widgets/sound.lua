@@ -8,7 +8,7 @@ local settings = require("settings")
 local sound = sbar.add("item", "widgets.sound", {
   position = "right",
   icon = { string = icons.volume._100 },
-  label = { string = "--%", width = 34, align = "right" },
+  label = { string = "--%", width = settings.value_width, align = "right" },
   popup = {
     align = "center",
     y_offset = 4,
