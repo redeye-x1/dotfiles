@@ -18,8 +18,13 @@ return {
   -- so it reads as an inset chip: sketchybar has no per-corner radius, so a
   -- full-height field would round its inner edge too and cut a notch into the
   -- pill where it meets the app icons.
-  digit_chip_height = 18,
+  -- 17 against the pill's 25 leaves exactly 4 above and below; 18 leaves 3.5 and
+  -- rounds unevenly, which reads as the chip sitting low.
+  digit_chip_height = 17,
   digit_chip_radius = 4,
+  -- Pill showing to the left of the chip. Without it the chip's rounded corner
+  -- sits directly on the pill's, with no air between the two curves.
+  digit_chip_inset = 4,
 
   -- The app icon font shipped by the font-sketchybar-app-font cask. Labels use
   -- the :slug: form from helpers/app_icons.lua, which the font turns into a

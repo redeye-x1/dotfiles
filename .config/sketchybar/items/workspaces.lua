@@ -152,10 +152,10 @@ for i = 1, WORKSPACE_COUNT do
       },
     },
     label = { drawing = false },
-    -- No padding on any member: it would sit inside the bracket and show up as
-    -- a sliver of body colour beside the digit field. The gap item below is
-    -- what separates one pill from the next.
-    padding_left = 0,
+    -- This padding falls inside the bracket, so it shows as pill colour: it is
+    -- what gives the chip its left margin. The gap between whole pills comes
+    -- from the gap item below, not from here.
+    padding_left = settings.digit_chip_inset,
     padding_right = 0,
     click_script = "aerospace workspace " .. i,
   })
