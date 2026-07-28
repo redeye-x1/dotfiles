@@ -103,6 +103,18 @@ slider:subscribe("mouse.clicked", function(env)
     .. "-e 'set volume output volume " .. percentage .. "'")
 end)
 
+-- Scrolling over the widget changes the volume, which makes the popup optional
+-- for the common case: the slider is only needed when aiming at a value.
+-- ctrl gives single steps instead of tens.
+sound:subscribe("mouse.scrolled", function(env)
+  local delta = tonumber(env.INFO and env.INFO.delta) or 0
+  if env.INFO and env.INFO.modifier ~= "ctrl" then delta = delta * 10 end
+  if delta == 0 then return end
+  sbar.exec("osascript -e 'set volume without output muted' -e 'set volume "
+    .. "output volume (output volume of (get volume settings) + "
+    .. delta .. ")'")
+end)
+
 -- Dismissal. sketchybar has no global click event, so this comes from two
 -- directions: every other item's click_script carries settings.close_popups,
 -- and switching to another application closes it here. Clicking a second
