@@ -103,8 +103,14 @@ slider:subscribe("mouse.clicked", function(env)
     .. "-e 'set volume output volume " .. percentage .. "'")
 end)
 
--- Anything else being clicked in the bar dismisses the popup, so it cannot be
--- left hanging open.
-sound:subscribe("mouse.exited.global", function()
-  sound:set({ popup = { drawing = false } })
+-- Dismissal. sketchybar has no global click event, so this comes from two
+-- directions: every other item's click_script carries settings.close_popups,
+-- and switching to another application closes it here. Clicking a second
+-- window of the application already in front is the one case neither covers.
+--
+-- Not on mouse.exited.global, though that event does fire: the popup hangs
+-- below the bar, so reaching for the slider means leaving the bar and would
+-- shut it just as it is being aimed at.
+sound:subscribe("front_app_switched", function()
+  sound:set({ popup = { drawing = "off" } })
 end)

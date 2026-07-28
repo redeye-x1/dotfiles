@@ -1,4 +1,5 @@
 local icons = require("icons")
+local settings = require("settings")
 
 local memory = sbar.add("item", "widgets.memory", {
   position = "right",
@@ -7,7 +8,7 @@ local memory = sbar.add("item", "widgets.memory", {
   icon = { string = icons.memory },
   label = { string = "--%", width = 34, align = "right" },
   -- memoryWidgetOptions.memoryMonitorApp = "Activity Monitor"
-  click_script = "open -a 'Activity Monitor'",
+  click_script = settings.close_popups .. "; open -a 'Activity Monitor'",
 })
 
 memory:subscribe({ "routine", "forced", "system_woke" }, function()

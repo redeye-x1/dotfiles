@@ -36,7 +36,7 @@ local datetime = sbar.add("item", "widgets.datetime", {
     },
   },
   -- dateWidgetOptions.calendarApp was empty, so this is the system default.
-  click_script = "open -a 'Calendar'",
+  click_script = settings.close_popups .. "; open -a 'Calendar'",
 })
 
 datetime:subscribe({ "routine", "forced", "system_woke" }, function()

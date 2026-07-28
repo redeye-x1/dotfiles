@@ -1,4 +1,5 @@
 local icons = require("icons")
+local settings = require("settings")
 
 local battery = sbar.add("item", "widgets.battery", {
   position = "right",
@@ -7,6 +8,8 @@ local battery = sbar.add("item", "widgets.battery", {
   update_freq = 10,
   icon = { string = icons.battery._100 },
   label = { string = "--%", width = 34, align = "right" },
+  -- No action of its own, but a click here should still dismiss a popup.
+  click_script = settings.close_popups,
 })
 
 battery:subscribe({ "routine", "forced", "system_woke", "power_source_change" },

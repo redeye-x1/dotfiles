@@ -24,7 +24,8 @@ local wifi = sbar.add("item", "widgets.wifi", {
   -- wherever it happened to be. No ?Wi-Fi anchor on purpose: that jumps into
   -- the Wi-Fi section, and the overview of all connections is the more useful
   -- landing spot.
-  click_script = "open 'x-apple.systempreferences:"
+  click_script = settings.close_popups
+    .. "; open 'x-apple.systempreferences:"
     .. "com.apple.Network-Settings.extension'",
 })
 

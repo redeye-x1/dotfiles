@@ -18,6 +18,11 @@ return {
   -- empty workspaces disappear entirely.
   empty_border_width = 1,
 
+  -- Prefixed to every click action so that clicking anything dismisses an open
+  -- popup. sketchybar has no global click event, so each item has to say this
+  -- for itself; the regex spares us naming them one by one.
+  close_popups = "sketchybar --set '/.*/' popup.drawing=off",
+
   -- The app icon font shipped by the font-sketchybar-app-font cask. Labels use
   -- the :slug: form from helpers/app_icons.lua, which the font turns into a
   -- glyph via ligatures.

@@ -173,7 +173,7 @@ for i = 1, WORKSPACE_COUNT do
     -- separates one pill from the next.
     padding_left = 0,
     padding_right = 0,
-    click_script = "aerospace workspace " .. i,
+    click_script = settings.close_popups .. "; aerospace workspace " .. i,
   })
 
   badges[i] = sbar.add("item", "workspace." .. i .. ".badge", {
@@ -191,7 +191,7 @@ for i = 1, WORKSPACE_COUNT do
     label = { drawing = false },
     padding_left = 0,
     padding_right = 0,
-    click_script = "aerospace workspace " .. i,
+    click_script = settings.close_popups .. "; aerospace workspace " .. i,
   })
 
   -- One pill per workspace, drawn by the bracket rather than by either member,

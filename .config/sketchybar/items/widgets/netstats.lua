@@ -1,5 +1,6 @@
 local colors = require("colors")
 local icons = require("icons")
+local settings = require("settings")
 
 -- simple-bar sampled this by running `netstat -w1` for 1.5 seconds every 2
 -- seconds (lib/scripts/netstats.sh). The C provider reads the interface
@@ -43,6 +44,8 @@ local netstats = sbar.add("graph", "widgets.netstats", 40, {
     align = "right",
     font = { size = 9.0 },
   },
+  -- No action of its own, but a click here should still dismiss a popup.
+  click_script = settings.close_popups,
 })
 
 netstats:subscribe("network_update", function(env)
