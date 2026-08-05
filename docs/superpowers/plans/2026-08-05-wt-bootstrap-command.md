@@ -16,6 +16,7 @@
 - **Sprache: zsh, nicht bash.** macOS liefert bash 3.2 (keine assoziativen Arrays); zsh 5.9 ist vorhanden und ist die Shell des Benutzers.
 - **Kein `shellcheck`.** Es unterstützt zsh nicht. Lint-Schritt ist `zsh -n <datei>` für jede Datei.
 - **Port-Prüfung: `nc -z 127.0.0.1 <port>`, Exit 0 = belegt.** Verifiziert am 2026-08-05. **Nicht** `-G 1` ergänzen — damit liefert `nc` auch bei belegtem Port Exit 1 und die Prüfung wird wertlos.
+- **Niemals `local path` in zsh.** `path` ist an `PATH` gekoppelt (als Array); eine lokale Deklaration leert `PATH` im gesamten Funktionsrumpf, und jeder Aufruf eines externen Kommandos scheitert mit „command not found". Nachgewiesen am 2026-08-05: `zsh -c 'f() { local path; echo "[$PATH]" }; f'` gibt `[]` aus. Dieser Plan benutzt deshalb `wt_path`, `cfg_path` und `jq_path`. Dasselbe gilt für die weiteren gekoppelten Namen `cdpath`, `fpath`, `manpath`. **Die Abhilfe ist immer der andere Variablenname — nie ein Retten und Wiederherstellen von `PATH`.** In den bats-Tests (bash) ist `path` unproblematisch und bleibt.
 - **Kein `setopt err_return`.** In zsh bricht damit auch ein `[[ bedingung ]] && aktion` mit falscher Bedingung die ganze Funktion ab, weil die Kette Exit 1 liefert. Fehlerbehandlung läuft ausschließlich explizit über `|| wt_die` bzw. `|| return 1`. Gesetzt werden nur `no_unset` und `pipe_fail`.
 - **`herdr workspace close` nimmt die ID positional** (`herdr workspace close w9`), **nicht** als `--workspace`. Verifiziert am 2026-08-05. Gleiches gilt für `workspace focus`.
 - **Ausgabe:** stdout gehört den Daten. Mit `--json` steht dort ausschließlich ein JSON-Objekt. **Fortschritts-, Hinweis- und Fehlermeldungen gehen immer nach stderr** — auch die Zeilen, die Setup- und Teardown-Schritte mitschreiben. Sonst zerbricht `wt new --json | jq` an der ersten Fortschrittszeile. Exit ≠ 0 bei Fehlern, Exit 2 nur für Aufrufsyntax-Fehler.
@@ -234,8 +235,8 @@ wt_require_cmd() {
 
 # Liest einen Wert per jq-Pfad aus einem JSON-String. Leer, wenn nicht vorhanden.
 wt_json_get() {
-  local json=$1 path=$2
-  printf '%s' "$json" | jq -r "$path // empty" 2>/dev/null
+  local json=$1 jq_path=$2
+  printf '%s' "$json" | jq -r "$jq_path // empty" 2>/dev/null
 }
 ```
 
@@ -469,22 +470,24 @@ JSON
 # Vollständige Konfiguration auf stdout. Flache Überlagerung: ein vom Benutzer
 # gesetzter Schlüssel ersetzt den Vorgabewert ganz, nicht teilweise.
 wt_config_load() {
-  local path defaults user
-  path=$(wt_config_path) || return 1
+  local cfg_path defaults user
+  cfg_path=$(wt_config_path) || return 1
   defaults=$(wt_config_defaults)
 
-  if [[ ! -f $path ]]; then
+  if [[ ! -f $cfg_path ]]; then
     printf '%s\n' "$defaults" | jq -c \
       --arg repo "$(wt_repo_root)" '. + {repo: $repo, config_path: null}'
     return 0
   fi
 
-  jq -e . "$path" >/dev/null 2>&1 \
-    || wt_die "ungültiges JSON in $path"
+  jq -e . "$cfg_path" >/dev/null 2>&1 \
+    || wt_die "ungültiges JSON in $cfg_path"
 
-  user=$(cat "$path")
+  user=$(cat "$cfg_path")
+  # Achtung: $path im jq-Programm ist die von --arg gebundene jq-Variable,
+  # keine Shell-Variable.
   jq -c -n --argjson d "$defaults" --argjson u "$user" \
-    --arg repo "$(wt_repo_root)" --arg path "$path" \
+    --arg repo "$(wt_repo_root)" --arg path "$cfg_path" \
     '$d * $u + {repo: $repo, config_path: $path}'
 }
 ```
@@ -659,17 +662,17 @@ wt_state_path() {
 }
 
 wt_state_read() {
-  local path
-  path=$(wt_state_path "$1") || return 1
-  [[ -f $path ]] || return 1
-  cat "$path"
+  local wt_path
+  wt_path=$(wt_state_path "$1") || return 1
+  [[ -f $wt_path ]] || return 1
+  cat "$wt_path"
 }
 
 wt_state_write() {
   local slug=$1 json=$2 path
-  path=$(wt_state_path "$slug") || return 1
-  mkdir -p "${path:h}"
-  printf '%s\n' "$json" | jq -c . > "$path"
+  wt_path=$(wt_state_path "$slug") || return 1
+  mkdir -p "${wt_path:h}"
+  printf '%s\n' "$json" | jq -c . > "$wt_path"
 }
 
 # Führt die Zustandsdatei mit einem JSON-Fragment zusammen.
@@ -681,9 +684,9 @@ wt_state_merge() {
 }
 
 wt_state_delete() {
-  local path
-  path=$(wt_state_path "$1") || return 1
-  rm -f "$path"
+  local wt_path
+  wt_path=$(wt_state_path "$1") || return 1
+  rm -f "$wt_path"
 }
 
 # Slugs aller bekannten Worktrees, einer pro Zeile.
@@ -1170,34 +1173,34 @@ wt_worktree_path() {
 # zurückgegeben. Beides ist kein Fehler, sondern Fortsetzen der Arbeit.
 wt_worktree_create() {
   local repo=$1 slug=$2 branch=$3 base=$4
-  local path
-  path=$(wt_worktree_path "$repo" "$slug")
+  local wt_path
+  wt_path=$(wt_worktree_path "$repo" "$slug")
 
-  if [[ -d $path ]]; then
-    printf '%s\n' "$path"
+  if [[ -d $wt_path ]]; then
+    printf '%s\n' "$wt_path"
     return 0
   fi
-  mkdir -p "${path:h}"
+  mkdir -p "${wt_path:h}"
 
   if git -C "$repo" rev-parse --verify --quiet "refs/heads/$branch" >/dev/null; then
-    git -C "$repo" worktree add -q "$path" "$branch" \
+    git -C "$repo" worktree add -q "$wt_path" "$branch" \
       || wt_die "worktree add fehlgeschlagen für bestehenden Branch $branch"
   else
-    git -C "$repo" worktree add -q -b "$branch" "$path" "$base" \
+    git -C "$repo" worktree add -q -b "$branch" "$wt_path" "$base" \
       || wt_die "worktree add fehlgeschlagen für neuen Branch $branch von $base"
   fi
-  printf '%s\n' "$path"
+  printf '%s\n' "$wt_path"
 }
 
 wt_worktree_is_dirty() {
-  local path=$1
-  [[ -n $(git -C "$path" status --porcelain 2>/dev/null) ]]
+  local wt_path=$1
+  [[ -n $(git -C "$wt_path" status --porcelain 2>/dev/null) ]]
 }
 
 wt_worktree_remove() {
-  local repo=$1 path=$2
-  git -C "$repo" worktree remove --force "$path" \
-    || wt_die "worktree remove fehlgeschlagen: $path"
+  local repo=$1 wt_path=$2
+  git -C "$repo" worktree remove --force "$wt_path" \
+    || wt_die "worktree remove fehlgeschlagen: $wt_path"
   git -C "$repo" worktree prune
 }
 
@@ -1212,9 +1215,9 @@ wt_worktree_merged() {
 # Bewusst .git/info/exclude und nicht .gitignore: im Firmen-Repo wird
 # keine eingecheckte Datei verändert.
 wt_git_exclude() {
-  local path=$1 pattern=$2 excl
-  excl=$(git -C "$path" rev-parse --git-path info/exclude) || return 1
-  [[ $excl == /* ]] || excl="$path/$excl"
+  local wt_path=$1 pattern=$2 excl
+  excl=$(git -C "$wt_path" rev-parse --git-path info/exclude) || return 1
+  [[ $excl == /* ]] || excl="$wt_path/$excl"
   mkdir -p "${excl:h}"
   touch "$excl"
   grep -q -x -F "$pattern" "$excl" || printf '%s\n' "$pattern" >> "$excl"
@@ -1379,7 +1382,7 @@ wt_herdr_call() {
 # Der erste konfigurierte Tab ist der Agent-Tab: sein Root-Pane bleibt am
 # Prompt, damit der Hub dort später einen Agent starten kann.
 wt_herdr_build() {
-  local path=$1 workdir=$2 label=$3 branch=$4 base=$5 config=$6 ports=$7
+  local wt_path=$1 workdir=$2 label=$3 branch=$4 base=$5 config=$6 ports=$7
 
   local -a envargs
   local k v
@@ -1390,7 +1393,7 @@ wt_herdr_build() {
 
   local resp workspace_id
   resp=$(wt_herdr_call worktree create \
-    --branch "$branch" --base "$base" --path "$path" \
+    --branch "$branch" --base "$base" --path "$wt_path" \
     --label "$label" --no-focus) || return 1
 
   workspace_id=$(wt_json_get "$resp" '.result.workspace.workspace_id')
@@ -1657,12 +1660,12 @@ wt_branch_name() {
 # Arbeitsverzeichnis für Setup-, Teardown- und Pane-Kommandos.
 # Honoriert den optionalen cwd-Schlüssel (Monorepo-Unterverzeichnis).
 wt_work_dir() {
-  local path=$1 config=$2 sub
+  local wt_path=$1 config=$2 sub
   sub=$(printf '%s' "$config" | jq -r '.cwd // empty')
   if [[ -n $sub ]]; then
-    printf '%s\n' "$path/$sub"
+    printf '%s\n' "$wt_path/$sub"
   else
-    printf '%s\n' "$path"
+    printf '%s\n' "$wt_path"
   fi
 }
 
@@ -1670,14 +1673,14 @@ wt_work_dir() {
 # Nötig, weil "herdr worktree create" kein --env kennt: der Agent-Tab bekommt
 # die Ports also nicht über herdr, sondern liest sie hier.
 wt_env_script_write() {
-  local path=$1 ports=$2 label=$3 repo=$4
-  mkdir -p "$path/.wt"
+  local wt_path=$1 ports=$2 label=$3 repo=$4
+  mkdir -p "$wt_path/.wt"
   {
     print -- "# Von wt erzeugt. In der Shell: source .wt/env.sh"
     printf '%s' "$ports" | jq -r '.ports | to_entries[] | "export \(.key)=\(.value)"'
     print -- "export COMPOSE_PROJECT_NAME=$label"
     print -- "export WT_MAIN=$repo"
-  } > "$path/.wt/env.sh"
+  } > "$wt_path/.wt/env.sh"
 }
 
 # Führt die Setup-Kommandos im Worktree aus. Erstes Scheitern beendet.
@@ -1720,12 +1723,12 @@ cmd_new() {
 
   local branch path label ports
   branch=$(wt_branch_name "$pattern" "$type" "$ticket" "$slug")
-  path=$(wt_worktree_path "$repo" "$slug")
+  wt_path=$(wt_worktree_path "$repo" "$slug")
   label="${repo:t}-$slug"
   ports=$(wt_ports_alloc "$slug" "$config") || return 1
 
   if (( dry )); then
-    jq -c -n --arg s "$slug" --arg b "$branch" --arg p "$path" \
+    jq -c -n --arg s "$slug" --arg b "$branch" --arg p "$wt_path" \
       --arg base "$base" --arg label "$label" \
       --argjson ports "$(printf '%s' "$ports" | jq .ports)" \
       --argjson setup "$(printf '%s' "$config" | jq .setup)" \
@@ -1735,14 +1738,14 @@ cmd_new() {
   fi
 
   wt_base_update "$repo" "$base" || return 1
-  path=$(wt_worktree_create "$repo" "$slug" "$branch" "$base") || return 1
+  wt_path=$(wt_worktree_create "$repo" "$slug" "$branch" "$base") || return 1
 
-  wt_git_exclude "$path" '.wt/'
-  wt_git_exclude "$path" 'docker-compose.override.yml'
-  mkdir -p "$path/.wt"
+  wt_git_exclude "$wt_path" '.wt/'
+  wt_git_exclude "$wt_path" 'docker-compose.override.yml'
+  mkdir -p "$wt_path/.wt"
 
-  wt_env_write "$path" "$ports"
-  wt_compose_override_write "$path" "$config" "$ports"
+  wt_env_write "$wt_path" "$ports"
+  wt_compose_override_write "$wt_path" "$config" "$ports"
 
   local -a setup_steps
   setup_steps=(${(f)"$(printf '%s' "$config" | jq -r '.setup[]?')"})
@@ -1755,10 +1758,10 @@ cmd_new() {
   export COMPOSE_PROJECT_NAME="$label"
   export WT_MAIN="$repo"
 
-  wt_env_script_write "$path" "$ports" "$label" "$repo"
+  wt_env_script_write "$wt_path" "$ports" "$label" "$repo"
 
   local workdir setup_ok=true
-  workdir=$(wt_work_dir "$path" "$config")
+  workdir=$(wt_work_dir "$wt_path" "$config")
   if (( ${#setup_steps} )); then
     wt_run_steps "$workdir" "Setup" "${setup_steps[@]}" || setup_ok=false
   fi
@@ -1768,23 +1771,23 @@ cmd_new() {
     if wt_herdr_available; then
       local built
       # path für den Worktree selbst, workdir als cwd der Tabs und Panes
-      built=$(wt_herdr_build "$path" "$workdir" "$label" "$branch" "$base" "$config" "$ports") \
+      built=$(wt_herdr_build "$wt_path" "$workdir" "$label" "$branch" "$base" "$config" "$ports") \
         && {
           ws=$(printf '%s' "$built" | jq .workspace_id)
           agent=$(printf '%s' "$built" | jq .agent_pane)
         }
     else
-      wt_warn "ohne herdr: nur der Worktree wurde angelegt ($path)"
+      wt_warn "ohne herdr: nur der Worktree wurde angelegt ($wt_path)"
     fi
   fi
 
   wt_state_merge "$slug" "$(jq -c -n \
-    --arg b "$branch" --arg p "$path" --arg base "$base" --arg label "$label" \
+    --arg b "$branch" --arg p "$wt_path" --arg base "$base" --arg label "$label" \
     --argjson ws "$ws" \
     '{branch:$b, path:$p, base:$base, compose_project:$label, workspace_id:$ws}')"
 
   local result
-  result=$(jq -c -n --arg s "$slug" --arg b "$branch" --arg p "$path" \
+  result=$(jq -c -n --arg s "$slug" --arg b "$branch" --arg p "$wt_path" \
     --arg base "$base" --arg label "$label" \
     --argjson ports "$(printf '%s' "$ports" | jq .ports)" \
     --argjson ws "$ws" --argjson agent "$agent" \
@@ -1798,7 +1801,7 @@ cmd_new() {
     printf '%s\n' "$result" | jq .
   fi
 
-  [[ $setup_ok == true ]] || wt_die "Setup fehlgeschlagen — kein Agent gestartet, Worktree bleibt unter $path"
+  [[ $setup_ok == true ]] || wt_die "Setup fehlgeschlagen — kein Agent gestartet, Worktree bleibt unter $wt_path"
   return 0
 }
 ```
@@ -1978,9 +1981,9 @@ cmd_ls() {
   while read -r slug; do
     [[ -n $slug ]] || continue
     state=$(wt_state_read "$slug") || continue
-    path=$(printf '%s' "$state" | jq -r '.path // ""')
+    wt_path=$(printf '%s' "$state" | jq -r '.path // ""')
     running=false
-    [[ -d $path ]] && running=true
+    [[ -d $wt_path ]] && running=true
     out=$(printf '%s' "$out" | jq -c \
       --arg s "$slug" --argjson st "$state" --argjson ex "$running" \
       '. + [ $st + {slug: $s, exists: $ex} ]')
@@ -2001,8 +2004,8 @@ wt_lifecycle_run() {
   local slug=$1 key=$2 label=$3
   local state path config repo
   state=$(wt_state_or_die "$slug") || return 1
-  path=$(printf '%s' "$state" | jq -r .path)
-  [[ -d $path ]] || wt_die "Worktree-Verzeichnis fehlt: $path"
+  wt_path=$(printf '%s' "$state" | jq -r .path)
+  [[ -d $wt_path ]] || wt_die "Worktree-Verzeichnis fehlt: $wt_path"
 
   config=$(wt_config_load) || return 1
   repo=$(printf '%s' "$config" | jq -r .repo)
@@ -2017,7 +2020,7 @@ wt_lifecycle_run() {
   local -a steps
   steps=(${(f)"$(printf '%s' "$config" | jq -r ".${key}[]?")"})
   (( ${#steps} )) || return 0
-  wt_run_steps "$(wt_work_dir "$path" "$config")" "$label" "${steps[@]}"
+  wt_run_steps "$(wt_work_dir "$wt_path" "$config")" "$label" "${steps[@]}"
 }
 
 cmd_up()   { local slug=${1:-}; [[ -n $slug ]] || wt_usage_die "wt up <slug>";   wt_lifecycle_run "$slug" setup "Start" }
@@ -2036,16 +2039,16 @@ cmd_rm() {
 
   local state path ws config repo
   state=$(wt_state_or_die "$slug") || return 1
-  path=$(printf '%s' "$state" | jq -r .path)
+  wt_path=$(printf '%s' "$state" | jq -r .path)
   ws=$(printf '%s' "$state" | jq -r '.workspace_id // empty')
   config=$(wt_config_load) || return 1
   repo=$(printf '%s' "$config" | jq -r .repo)
 
-  if [[ -d $path ]] && (( ! force )) && wt_worktree_is_dirty "$path"; then
-    wt_die "uncommittete Änderungen in $path — mit --force trotzdem entfernen"
+  if [[ -d $wt_path ]] && (( ! force )) && wt_worktree_is_dirty "$wt_path"; then
+    wt_die "uncommittete Änderungen in $wt_path — mit --force trotzdem entfernen"
   fi
 
-  [[ -d $path ]] && wt_lifecycle_run "$slug" teardown "Teardown" || true
+  [[ -d $wt_path ]] && wt_lifecycle_run "$slug" teardown "Teardown" || true
 
   if [[ -n $ws && $ws != null ]] && wt_herdr_available; then
     # Die ID ist positional, nicht --workspace.
@@ -2053,7 +2056,7 @@ cmd_rm() {
       || wt_warn "Workspace $ws konnte nicht geschlossen werden"
   fi
 
-  [[ -d $path ]] && wt_worktree_remove "$repo" "$path"
+  [[ -d $wt_path ]] && wt_worktree_remove "$repo" "$wt_path"
   wt_state_delete "$slug"
   print -u2 -- "wt: $slug entfernt"
 }
@@ -2312,7 +2315,7 @@ cmd_doctor() {
 
   local repo path
   repo=$(wt_repo_root) || return 1
-  path=$(wt_config_path) || return 1
+  wt_path=$(wt_config_path) || return 1
 
   local -a setup teardown
   local -a tabs_json
@@ -2369,10 +2372,10 @@ cmd_doctor() {
   fi
 
   if (( write )); then
-    [[ -f $path ]] && wt_die "$path existiert bereits — nicht überschrieben"
-    mkdir -p "${path:h}"
-    printf '%s\n' "$suggestion" | jq . > "$path"
-    print -u2 -- "wt: geschrieben nach $path"
+    [[ -f $wt_path ]] && wt_die "$wt_path existiert bereits — nicht überschrieben"
+    mkdir -p "${wt_path:h}"
+    printf '%s\n' "$suggestion" | jq . > "$wt_path"
+    print -u2 -- "wt: geschrieben nach $wt_path"
     return 0
   fi
 
@@ -2381,7 +2384,7 @@ cmd_doctor() {
   else
     printf '%s\n' "$suggestion" | jq .
     print -- ""
-    print -- "Mit 'wt doctor --write' nach $path schreiben."
+    print -- "Mit 'wt doctor --write' nach $wt_path schreiben."
   fi
 }
 ```
