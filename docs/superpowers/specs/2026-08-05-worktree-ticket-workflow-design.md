@@ -59,7 +59,14 @@ dort, wo sie flexibel sein muss (Skills).**
 
 ### 1. `wt` — das Bootstrap-Kommando
 
-Ort: `dotfiles/.local/bin/wt` (zsh; `~/.local/bin` liegt im PATH).
+Ort: eigenes Repo `~/development/wt`, Einstiegspunkt `bin/wt` (zsh), installiert
+als Symlink `~/.local/bin/wt` (liegt im PATH).
+
+`wt` ist ein Programm mit Testsuite, keine Konfiguration — es gehört deshalb nicht
+in die Dotfiles. Dort bleibt nur, was wirklich Konfiguration ist: die
+Projekt-Dateien unter `.config/wt/` und der `bats-core`-Eintrag im Brewfile. Auf
+einem neuen Rechner werden dadurch zwei Repos geklont statt eines; dafür muss
+nicht jeder Dotfiles-Commit durch eine Testsuite.
 
 Weiß nichts über Tickets, Git-Flow oder Jira. Gibt JSON aus und setzt Exit-Codes,
 ist also von Mensch und Agent gleichermaßen bedienbar.

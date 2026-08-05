@@ -4,7 +4,7 @@
 
 **Goal:** Ein Kommando `wt`, das aus einem Slug einen arbeitsfähigen, isolierten Git-Worktree macht — eigene Ports, eigener Docker-Stack, herdr-Workspace mit dem konfigurierten Tab-Layout — und ihn wieder abräumt.
 
-**Architecture:** Ein zsh-Executable `~/.local/bin/wt` als Argument-Parser und Dispatcher, dahinter sechs Bibliotheksdateien mit je einer Zuständigkeit (Konfiguration, Ports, Umgebungsdateien, Git, herdr, Zustand). Alle Seiteneffekte sitzen hinter Umgebungsvariablen-Nahtstellen, damit die Tests hermetisch laufen: `WT_CONFIG_DIR`, `WT_STATE_DIR`, `WT_WORKTREE_DIR`, `WT_HERDR_BIN`, `WT_LIB`. `wt new --dry-run` gibt den vollständigen Ausführungsplan als JSON aus, ohne etwas anzufassen — das ist gleichzeitig die Testschnittstelle für die Orchestrierung und die Vertrauensschnittstelle für den Benutzer.
+**Architecture:** Ein zsh-Executable `bin/wt` als Argument-Parser und Dispatcher (installiert als Symlink `~/.local/bin/wt`), dahinter sechs Bibliotheksdateien mit je einer Zuständigkeit (Konfiguration, Ports, Umgebungsdateien, Git, herdr, Zustand). Alle Seiteneffekte sitzen hinter Umgebungsvariablen-Nahtstellen, damit die Tests hermetisch laufen: `WT_CONFIG_DIR`, `WT_STATE_DIR`, `WT_WORKTREE_DIR`, `WT_HERDR_BIN`, `WT_LIB`. `wt new --dry-run` gibt den vollständigen Ausführungsplan als JSON aus, ohne etwas anzufassen — das ist gleichzeitig die Testschnittstelle für die Orchestrierung und die Vertrauensschnittstelle für den Benutzer.
 
 **Tech Stack:** zsh 5.9 (macOS-eigen, keine Zusatzabhängigkeit), `jq` 1.8.2 für JSON, `git worktree`, `nc` für Port-Prüfung, `herdr` 0.8.0 CLI, `bats-core` für Tests.
 
@@ -12,12 +12,13 @@
 
 ## Global Constraints
 
+- **Ort: eigenes Repo unter `~/development/wt`.** `wt` ist ein Programm, keine Konfiguration, und gehört deshalb nicht in die Dotfiles. Dort bleibt nur, was Konfiguration ist: die Projekt-Dateien unter `.config/wt/` und der `bats-core`-Eintrag im Brewfile. Alle Pfadangaben in diesem Plan sind relativ zur Wurzel des `wt`-Repos, außer sie nennen `~/dotfiles` ausdrücklich.
 - **Sprache: zsh, nicht bash.** macOS liefert bash 3.2 (keine assoziativen Arrays); zsh 5.9 ist vorhanden und ist die Shell des Benutzers.
 - **Kein `shellcheck`.** Es unterstützt zsh nicht. Lint-Schritt ist `zsh -n <datei>` für jede Datei.
 - **Port-Prüfung: `nc -z 127.0.0.1 <port>`, Exit 0 = belegt.** Verifiziert am 2026-08-05. **Nicht** `-G 1` ergänzen — damit liefert `nc` auch bei belegtem Port Exit 1 und die Prüfung wird wertlos.
 - **Kein `setopt err_return`.** In zsh bricht damit auch ein `[[ bedingung ]] && aktion` mit falscher Bedingung die ganze Funktion ab, weil die Kette Exit 1 liefert. Fehlerbehandlung läuft ausschließlich explizit über `|| wt_die` bzw. `|| return 1`. Gesetzt werden nur `no_unset` und `pipe_fail`.
 - **`herdr workspace close` nimmt die ID positional** (`herdr workspace close w9`), **nicht** als `--workspace`. Verifiziert am 2026-08-05. Gleiches gilt für `workspace focus`.
-- **Ausgabe:** Menschentext auf stdout; mit `--json` ausschließlich ein JSON-Objekt auf stdout. Fehler immer als Klartext auf stderr, Exit ≠ 0. Exit 2 nur für Aufrufsyntax-Fehler.
+- **Ausgabe:** stdout gehört den Daten. Mit `--json` steht dort ausschließlich ein JSON-Objekt. **Fortschritts-, Hinweis- und Fehlermeldungen gehen immer nach stderr** — auch die Zeilen, die Setup- und Teardown-Schritte mitschreiben. Sonst zerbricht `wt new --json | jq` an der ersten Fortschrittszeile. Exit ≠ 0 bei Fehlern, Exit 2 nur für Aufrufsyntax-Fehler.
 - **Nichts im Ziel-Repo verändern**, was eingecheckt ist. Erlaubt sind nur worktree-lokale Dateien (`.env`, `docker-compose.override.yml`, `.wt/`) und `.git/info/exclude`. Niemals die `.gitignore` des Projekts anfassen.
 - **Compose `!override` wirkt erst ab Docker Compose 2.24.**
 - **Konfiguration** liegt in `${WT_CONFIG_DIR:-$HOME/.config/wt}/<repo-name>.json`, **Zustand** in `${WT_STATE_DIR:-$HOME/.local/state/wt}/<repo-name>/<slug>.json`.
@@ -31,72 +32,82 @@
 
 | Datei | Zuständigkeit |
 |---|---|
-| `.local/bin/wt` | Argument-Parsing, Subkommando-Dispatch, Hilfe, Version. Keine Fachlogik. |
-| `.local/lib/wt/util.zsh` | `wt_die`, `wt_warn`, `wt_json_get`, `wt_require_cmd` |
-| `.local/lib/wt/config.zsh` | Repo-Wurzel und -Name ermitteln, Konfiguration finden, laden, mit Vorgabewerten mischen, validieren |
-| `.local/lib/wt/ports.zsh` | Offset berechnen, Belegung prüfen, Ports zuteilen |
-| `.local/lib/wt/state.zsh` | Zustandsdatei lesen, schreiben, löschen, auflisten |
-| `.local/lib/wt/envfile.zsh` | `.env`-Block schreiben, `docker-compose.override.yml` erzeugen |
-| `.local/lib/wt/git.zsh` | Basis-Branch aktualisieren, Worktree anlegen, entfernen, gemergte finden |
-| `.local/lib/wt/herdr.zsh` | Workspace, Tabs, Panes nach Konfiguration aufbauen |
-| `tests/wt/helper.bash` | Testhilfen: Fixture-Repo, herdr-Attrappe, temporäre Verzeichnisse |
-| `tests/wt/*.bats` | Eine Datei pro Bibliothek |
+| `bin/wt` | Argument-Parsing, Subkommando-Dispatch, Hilfe, Version. Keine Fachlogik. |
+| `lib/util.zsh` | `wt_die`, `wt_warn`, `wt_json_get`, `wt_require_cmd` |
+| `lib/config.zsh` | Repo-Wurzel und -Name ermitteln, Konfiguration finden, laden, mit Vorgabewerten mischen, validieren |
+| `lib/ports.zsh` | Offset berechnen, Belegung prüfen, Ports zuteilen |
+| `lib/state.zsh` | Zustandsdatei lesen, schreiben, löschen, auflisten |
+| `lib/envfile.zsh` | `.env`-Block schreiben, `docker-compose.override.yml` erzeugen |
+| `lib/git.zsh` | Basis-Branch aktualisieren, Worktree anlegen, entfernen, gemergte finden |
+| `lib/herdr.zsh` | Workspace, Tabs, Panes nach Konfiguration aufbauen |
+| `tests/helper.bash` | Testhilfen: Fixture-Repo, herdr-Attrappe, temporäre Verzeichnisse |
+| `tests/*.bats` | Eine Datei pro Bibliothek |
 
-`wt` findet seine Bibliothek über `WT_LIB="${WT_LIB:-${0:A:h:h}/lib/wt}"`. `${0:A}` löst in zsh Symlinks auf, dadurch funktioniert derselbe Ausdruck sowohl über den gestowten Symlink in `~/.local/bin` als auch direkt im Repo.
+`wt` findet seine Bibliothek über `WT_LIB="${WT_LIB:-${0:A:h:h}/lib}"`. `${0:A}` löst in zsh Symlinks auf: aufgerufen als `~/.local/bin/wt` (Symlink) landet der Ausdruck bei `~/development/wt/lib`, direkt im Repo aufgerufen ebenso. Dadurch braucht nur die eine Datei `bin/wt` einen Symlink, die Bibliothek keinen.
 
 ---
 
 ### Task 1: Test-Harness, Skelett, herdr-Skill
 
 **Files:**
-- Create: `.local/bin/wt`
-- Create: `.local/lib/wt/util.zsh`
-- Create: `tests/wt/helper.bash`
-- Create: `tests/wt/cli.bats`
-- Modify: `Brewfile`
-- Modify: `.stow-local-ignore`
+- Create: `bin/wt`
+- Create: `lib/util.zsh`
+- Create: `tests/helper.bash`
+- Create: `tests/cli.bats`
+- Create: `.gitignore`
+- Modify (im Dotfiles-Repo): `Brewfile`
 - Create (außerhalb des Repos): `~/.claude/skills/herdr/SKILL.md`
 
 **Interfaces:**
 - Consumes: nichts
-- Produces: `wt_die <msg>` (schreibt nach stderr, Exit 1), `wt_warn <msg>`, `wt_require_cmd <name>`; Executable `.local/bin/wt` mit `--version`, `help`, Dispatch-Tabelle
+- Produces: `wt_die <msg>` (schreibt nach stderr, Exit 1), `wt_warn <msg>`, `wt_require_cmd <name>`; Executable `bin/wt` mit `--version`, `help`, Dispatch-Tabelle
 
-- [ ] **Step 1: bats-core installieren und im Brewfile festhalten**
+- [ ] **Step 1: bats-core installieren und in den Dotfiles festhalten**
 
-In `Brewfile` nach der Zeile `brew "jq"` einfügen:
+`bats-core` ist eine Werkzeug-Abhängigkeit der Maschine, gehört also ins Brewfile der Dotfiles — nicht in dieses Repo. In `~/dotfiles/Brewfile` nach der Zeile `brew "jq"` einfügen:
 
 ```ruby
 brew "bats-core"
 ```
 
-Dann:
+Dann installieren:
 
 ```bash
 brew install bats-core
+bats --version
 ```
 
-- [ ] **Step 2: Tests aus dem Stow-Verzeichnis ausnehmen**
+Expected: eine Version ≥ 1.11
 
-In `.stow-local-ignore` nach dem Block `# Ignore documentation` ergänzen:
+Dieser eine Commit landet im Dotfiles-Repo, alle weiteren in `~/development/wt`.
+
+- [ ] **Step 2: `.gitignore` anlegen**
+
+`.gitignore`:
 
 ```
-^/tests
+# Arbeitsverzeichnis der Subagent-Reviews
+.superpowers/
 ```
-
-Ohne das würde `stow` einen Symlink `~/tests` anlegen.
 
 - [ ] **Step 3: Test-Helfer schreiben**
 
-`tests/wt/helper.bash`:
+`tests/helper.bash`:
 
 ```bash
 # Gemeinsame Hilfen für alle wt-Tests.
-WT_ROOT="$(cd "$BATS_TEST_DIRNAME/../.." && pwd)"
-WT_BIN="$WT_ROOT/.local/bin/wt"
-export WT_LIB="$WT_ROOT/.local/lib/wt"
+WT_ROOT="$(cd "$BATS_TEST_DIRNAME/.." && pwd)"
+WT_BIN="$WT_ROOT/bin/wt"
+export WT_LIB="$WT_ROOT/lib"
 
 # Ruft das Kommando unter Test auf. Nutzung: run wt config show
+# $output enthält dabei stdout UND stderr, taugt also für Meldungsprüfungen.
 wt() { "$WT_BIN" "$@"; }
+
+# Nur stdout, ohne Fortschrittszeilen. Für Tests, die JSON auswerten:
+#   run wt_json new foo --json
+# Ohne das würde jq an der ersten "wt: Setup: …"-Zeile scheitern.
+wt_json() { "$WT_BIN" "$@" 2>/dev/null; }
 
 # Frische, isolierte Verzeichnisse für Konfiguration, Zustand und Worktrees.
 wt_tmpdirs() {
@@ -152,7 +163,7 @@ STUB
 
 - [ ] **Step 4: Den fehlschlagenden Test schreiben**
 
-`tests/wt/cli.bats`:
+`tests/cli.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -191,12 +202,12 @@ teardown() { wt_cleanup; }
 
 - [ ] **Step 5: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/cli.bats`
+Run: `bats tests/cli.bats`
 Expected: FAIL — `wt` existiert noch nicht (`command not found` bzw. Permission denied)
 
 - [ ] **Step 6: `util.zsh` schreiben**
 
-`.local/lib/wt/util.zsh`:
+`lib/util.zsh`:
 
 ```zsh
 # Ausgabe- und Prüfhilfen. Keine Seiteneffekte beim Sourcen.
@@ -230,7 +241,7 @@ wt_json_get() {
 
 - [ ] **Step 7: `wt`-Skelett schreiben**
 
-`.local/bin/wt`:
+`bin/wt`:
 
 ```zsh
 #!/usr/bin/env zsh
@@ -241,7 +252,7 @@ emulate -L zsh
 setopt no_unset pipe_fail
 
 typeset -g WT_VERSION=0.1.0
-typeset -g WT_LIB="${WT_LIB:-${0:A:h:h}/lib/wt}"
+typeset -g WT_LIB="${WT_LIB:-${0:A:h:h}/lib}"
 
 source "$WT_LIB/util.zsh"
 
@@ -282,15 +293,15 @@ main "$@"
 - [ ] **Step 8: Ausführbar machen und Syntax prüfen**
 
 ```bash
-chmod +x .local/bin/wt
-zsh -n .local/bin/wt && zsh -n .local/lib/wt/util.zsh && echo "Syntax ok"
+chmod +x bin/wt
+zsh -n bin/wt && zsh -n lib/util.zsh && echo "Syntax ok"
 ```
 
 Expected: `Syntax ok`
 
 - [ ] **Step 9: Tests laufen lassen**
 
-Run: `bats tests/wt/cli.bats`
+Run: `bats tests/cli.bats`
 Expected: 4 Tests PASS
 
 - [ ] **Step 10: herdr-Agent-Skill installieren**
@@ -308,8 +319,12 @@ Das liegt bewusst außerhalb der Dotfiles: die Datei ist versionsgebunden an das
 - [ ] **Step 11: Commit**
 
 ```bash
-git add Brewfile .stow-local-ignore .local/bin/wt .local/lib/wt/util.zsh tests/wt/
-git commit -m "feat(wt): scaffold the wt command with a bats harness"
+git add .gitignore bin/wt lib/util.zsh tests/
+git commit -m "feat: scaffold the wt command with a bats harness"
+
+# Der Brewfile-Eintrag gehört zum anderen Repo:
+git -C ~/dotfiles add Brewfile
+git -C ~/dotfiles commit -m "brew: add bats-core for the wt test suite"
 ```
 
 ---
@@ -317,9 +332,9 @@ git commit -m "feat(wt): scaffold the wt command with a bats harness"
 ### Task 2: Konfiguration auflösen
 
 **Files:**
-- Create: `.local/lib/wt/config.zsh`
-- Create: `tests/wt/config.bats`
-- Modify: `.local/bin/wt` (Subkommando `config show`)
+- Create: `lib/config.zsh`
+- Create: `tests/config.bats`
+- Modify: `bin/wt` (Subkommando `config show`)
 
 **Interfaces:**
 - Consumes: `wt_die`, `wt_json_get` aus `util.zsh`
@@ -331,7 +346,7 @@ git commit -m "feat(wt): scaffold the wt command with a bats harness"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/config.bats`:
+`tests/config.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -402,12 +417,12 @@ Der letzte Test ist der wichtigste: aus einem Worktree gibt `git rev-parse --sho
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/config.bats`
+Run: `bats tests/config.bats`
 Expected: FAIL — alle fünf, `noch nicht implementiert: config`
 
 - [ ] **Step 3: `config.zsh` schreiben**
 
-`.local/lib/wt/config.zsh`:
+`lib/config.zsh`:
 
 ```zsh
 # Projekt-Konfiguration finden, laden und mit Vorgabewerten mischen.
@@ -476,7 +491,7 @@ wt_config_load() {
 
 - [ ] **Step 4: `config show` in `wt` verdrahten**
 
-In `.local/bin/wt` die `source`-Zeilen ergänzen:
+In `bin/wt` die `source`-Zeilen ergänzen:
 
 ```zsh
 source "$WT_LIB/util.zsh"
@@ -514,15 +529,15 @@ cmd_config() {
 
 - [ ] **Step 5: Tests laufen lassen**
 
-Run: `bats tests/wt/config.bats`
+Run: `bats tests/config.bats`
 Expected: 5 Tests PASS
 
 - [ ] **Step 6: Syntax prüfen und committen**
 
 ```bash
-zsh -n .local/bin/wt && zsh -n .local/lib/wt/config.zsh
-git add .local/bin/wt .local/lib/wt/config.zsh tests/wt/config.bats
-git commit -m "feat(wt): resolve per-repo configuration with defaults"
+zsh -n bin/wt && zsh -n lib/config.zsh
+git add bin/wt lib/config.zsh tests/config.bats
+git commit -m "feat: resolve per-repo configuration with defaults"
 ```
 
 ---
@@ -530,10 +545,10 @@ git commit -m "feat(wt): resolve per-repo configuration with defaults"
 ### Task 3: Port-Zuteilung und Zustandsdatei
 
 **Files:**
-- Create: `.local/lib/wt/ports.zsh`
-- Create: `.local/lib/wt/state.zsh`
-- Create: `tests/wt/ports.bats`
-- Modify: `.local/bin/wt` (Subkommando `ports`)
+- Create: `lib/ports.zsh`
+- Create: `lib/state.zsh`
+- Create: `tests/ports.bats`
+- Modify: `bin/wt` (Subkommando `ports`)
 
 **Interfaces:**
 - Consumes: `wt_die`, `wt_config_load`, `wt_repo_name`
@@ -545,7 +560,7 @@ git commit -m "feat(wt): resolve per-repo configuration with defaults"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/ports.bats`:
+`tests/ports.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -621,12 +636,12 @@ teardown() { wt_cleanup; }
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/ports.bats`
+Run: `bats tests/ports.bats`
 Expected: FAIL — `noch nicht implementiert: ports`
 
 - [ ] **Step 3: `state.zsh` schreiben**
 
-`.local/lib/wt/state.zsh`:
+`lib/state.zsh`:
 
 ```zsh
 # Zustand pro Worktree: gewählter Offset, Ports, Pfade, herdr-IDs.
@@ -685,7 +700,7 @@ wt_state_list() {
 
 - [ ] **Step 4: `ports.zsh` schreiben**
 
-`.local/lib/wt/ports.zsh`:
+`lib/ports.zsh`:
 
 ```zsh
 # Deterministische, kollisionsfreie Port-Zuteilung pro Worktree.
@@ -820,15 +835,15 @@ cmd_ports() {
 
 - [ ] **Step 6: Tests laufen lassen**
 
-Run: `bats tests/wt/ports.bats`
+Run: `bats tests/ports.bats`
 Expected: 6 Tests PASS
 
 - [ ] **Step 7: Syntax prüfen und committen**
 
 ```bash
-zsh -n .local/bin/wt && zsh -n .local/lib/wt/ports.zsh && zsh -n .local/lib/wt/state.zsh
-git add .local/bin/wt .local/lib/wt/{ports,state}.zsh tests/wt/ports.bats
-git commit -m "feat(wt): allocate deterministic per-worktree ports"
+zsh -n bin/wt && zsh -n lib/ports.zsh && zsh -n lib/state.zsh
+git add bin/wt lib/{ports,state}.zsh tests/ports.bats
+git commit -m "feat: allocate deterministic per-worktree ports"
 ```
 
 ---
@@ -836,8 +851,8 @@ git commit -m "feat(wt): allocate deterministic per-worktree ports"
 ### Task 4: `.env`-Block und Compose-Override
 
 **Files:**
-- Create: `.local/lib/wt/envfile.zsh`
-- Create: `tests/wt/envfile.bats`
+- Create: `lib/envfile.zsh`
+- Create: `tests/envfile.bats`
 
 **Interfaces:**
 - Consumes: `wt_die`, `wt_warn`
@@ -848,7 +863,7 @@ git commit -m "feat(wt): allocate deterministic per-worktree ports"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/envfile.bats`:
+`tests/envfile.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -913,12 +928,12 @@ teardown() { wt_cleanup; }
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/envfile.bats`
+Run: `bats tests/envfile.bats`
 Expected: FAIL — `envfile.zsh` existiert nicht
 
 - [ ] **Step 3: `envfile.zsh` schreiben**
 
-`.local/lib/wt/envfile.zsh`:
+`lib/envfile.zsh`:
 
 ```zsh
 # Worktree-lokale Dateien für Port-Isolation: .env-Block und Compose-Override.
@@ -995,15 +1010,15 @@ wt_compose_override_write() {
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `bats tests/wt/envfile.bats`
+Run: `bats tests/envfile.bats`
 Expected: 5 Tests PASS
 
 - [ ] **Step 5: Syntax prüfen und committen**
 
 ```bash
-zsh -n .local/lib/wt/envfile.zsh
-git add .local/lib/wt/envfile.zsh tests/wt/envfile.bats
-git commit -m "feat(wt): write per-worktree env block and compose override"
+zsh -n lib/envfile.zsh
+git add lib/envfile.zsh tests/envfile.bats
+git commit -m "feat: write per-worktree env block and compose override"
 ```
 
 ---
@@ -1011,8 +1026,8 @@ git commit -m "feat(wt): write per-worktree env block and compose override"
 ### Task 5: Git-Schicht
 
 **Files:**
-- Create: `.local/lib/wt/git.zsh`
-- Create: `tests/wt/git.bats`
+- Create: `lib/git.zsh`
+- Create: `tests/git.bats`
 
 **Interfaces:**
 - Consumes: `wt_die`, `wt_warn`, `wt_repo_root`
@@ -1027,7 +1042,7 @@ git commit -m "feat(wt): write per-worktree env block and compose override"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/git.bats`:
+`tests/git.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -1116,12 +1131,12 @@ teardown() { wt_cleanup; }
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/git.bats`
+Run: `bats tests/git.bats`
 Expected: FAIL — `git.zsh` existiert nicht
 
 - [ ] **Step 3: `git.zsh` schreiben**
 
-`.local/lib/wt/git.zsh`:
+`lib/git.zsh`:
 
 ```zsh
 # Git-Operationen: Basis aktualisieren, Worktrees anlegen und entfernen.
@@ -1208,15 +1223,15 @@ wt_git_exclude() {
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `bats tests/wt/git.bats`
+Run: `bats tests/git.bats`
 Expected: 7 Tests PASS
 
 - [ ] **Step 5: Syntax prüfen und committen**
 
 ```bash
-zsh -n .local/lib/wt/git.zsh
-git add .local/lib/wt/git.zsh tests/wt/git.bats
-git commit -m "feat(wt): add the git worktree layer"
+zsh -n lib/git.zsh
+git add lib/git.zsh tests/git.bats
+git commit -m "feat: add the git worktree layer"
 ```
 
 ---
@@ -1224,8 +1239,8 @@ git commit -m "feat(wt): add the git worktree layer"
 ### Task 6: herdr-Schicht
 
 **Files:**
-- Create: `.local/lib/wt/herdr.zsh`
-- Create: `tests/wt/herdr.bats`
+- Create: `lib/herdr.zsh`
+- Create: `tests/herdr.bats`
 
 **Interfaces:**
 - Consumes: `wt_die`, `wt_warn`, `wt_json_get`
@@ -1237,7 +1252,7 @@ git commit -m "feat(wt): add the git worktree layer"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/herdr.bats`:
+`tests/herdr.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -1331,12 +1346,12 @@ STUB
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/herdr.bats`
+Run: `bats tests/herdr.bats`
 Expected: FAIL — `herdr.zsh` existiert nicht
 
 - [ ] **Step 3: `herdr.zsh` schreiben**
 
-`.local/lib/wt/herdr.zsh`:
+`lib/herdr.zsh`:
 
 ```zsh
 # Workspace, Tabs und Panes in herdr aufbauen.
@@ -1440,15 +1455,15 @@ wt_herdr_build() {
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `bats tests/wt/herdr.bats`
+Run: `bats tests/herdr.bats`
 Expected: 7 Tests PASS
 
 - [ ] **Step 5: Syntax prüfen und committen**
 
 ```bash
-zsh -n .local/lib/wt/herdr.zsh
-git add .local/lib/wt/herdr.zsh tests/wt/herdr.bats
-git commit -m "feat(wt): build herdr workspace layout from config"
+zsh -n lib/herdr.zsh
+git add lib/herdr.zsh tests/herdr.bats
+git commit -m "feat: build herdr workspace layout from config"
 ```
 
 ---
@@ -1456,8 +1471,8 @@ git commit -m "feat(wt): build herdr workspace layout from config"
 ### Task 7: `wt new` verdrahten, inklusive `--dry-run`
 
 **Files:**
-- Modify: `.local/bin/wt`
-- Create: `tests/wt/new.bats`
+- Modify: `bin/wt`
+- Create: `tests/new.bats`
 
 **Interfaces:**
 - Consumes: alles aus Task 2–6
@@ -1470,7 +1485,7 @@ git commit -m "feat(wt): build herdr workspace layout from config"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/new.bats`:
+`tests/new.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -1496,7 +1511,7 @@ JSON
 teardown() { wt_cleanup; }
 
 @test "--dry-run fasst alles zusammen und verändert nichts" {
-  run wt new login-bug --type bugfix --ticket PROJ-1234 --dry-run --json
+  run wt_json new login-bug --type bugfix --ticket PROJ-1234 --dry-run --json
   [ "$status" -eq 0 ]
   [ "$(echo "$output" | jq -r .branch)" = "bugfix/PROJ-1234-login-bug" ]
   [ "$(echo "$output" | jq -r .dry_run)" = "true" ]
@@ -1505,13 +1520,13 @@ teardown() { wt_cleanup; }
 }
 
 @test "fehlendes Ticket lässt kein leeres Segment im Branch" {
-  run wt new login-bug --type bugfix --dry-run --json
+  run wt_json new login-bug --type bugfix --dry-run --json
   [ "$status" -eq 0 ]
   [ "$(echo "$output" | jq -r .branch)" = "bugfix/login-bug" ]
 }
 
 @test "new legt Worktree an, führt Setup aus und meldet Ports" {
-  run wt new login-bug --type bugfix --ticket PROJ-1234 --json
+  run wt_json new login-bug --type bugfix --ticket PROJ-1234 --json
   [ "$status" -eq 0 ]
   path="$(echo "$output" | jq -r .path)"
   [ -d "$path" ]
@@ -1524,7 +1539,7 @@ teardown() { wt_cleanup; }
 }
 
 @test "env.sh macht Ports und Projektnamen sourcebar" {
-  run wt new login-bug --type bugfix --json
+  run wt_json new login-bug --type bugfix --json
   [ "$status" -eq 0 ]
   path="$(echo "$output" | jq -r .path)"
   [ -f "$path/.wt/env.sh" ]
@@ -1545,7 +1560,7 @@ JSON
   git -C "$WT_REPO" commit -qm app
   git -C "$WT_REPO" branch -f develop main
 
-  run wt new mono --type bugfix --json
+  run wt_json new mono --type bugfix --json
   [ "$status" -eq 0 ]
   path="$(echo "$output" | jq -r .path)"
   [ -f "$path/app/marker" ]
@@ -1553,7 +1568,7 @@ JSON
 }
 
 @test "das Briefing-Verzeichnis ist worktree-lokal ausgeschlossen" {
-  run wt new login-bug --type bugfix --json
+  run wt_json new login-bug --type bugfix --json
   path="$(echo "$output" | jq -r .path)"
   excl="$(git -C "$path" rev-parse --git-path info/exclude)"
   grep -q '\.wt/' "$excl"
@@ -1586,22 +1601,32 @@ JSON
 exit 1
 STUB
   chmod +x "$WT_HERDR_BIN"
-  run wt new login-bug --type bugfix --json
+  run wt_json new login-bug --type bugfix --json
   [ "$status" -eq 0 ]
   [ -d "$(echo "$output" | jq -r .path)" ]
   [ "$(echo "$output" | jq -r .workspace_id)" = "null" ]
-  [[ "$output" == *"ohne herdr"* ]] || true
+}
+
+@test "ohne herdr-Server wird der eingeschränkte Modus gemeldet" {
+  cat > "$WT_HERDR_BIN" <<'STUB'
+#!/usr/bin/env bash
+exit 1
+STUB
+  chmod +x "$WT_HERDR_BIN"
+  run wt new login-bug --type bugfix --json
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"ohne herdr"* ]]
 }
 ```
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/new.bats`
+Run: `bats tests/new.bats`
 Expected: FAIL — `noch nicht implementiert: new`
 
 - [ ] **Step 3: `cmd_new` implementieren**
 
-In `.local/bin/wt` alle Bibliotheken sourcen:
+In `bin/wt` alle Bibliotheken sourcen:
 
 ```zsh
 source "$WT_LIB/util.zsh"
@@ -1662,7 +1687,8 @@ wt_run_steps() {
   local cmd
   for cmd in "$@"; do
     [[ -n $cmd ]] || continue
-    print -- "wt: $label: $cmd"
+    # stderr: stdout gehört bei --json allein dem JSON
+    print -u2 -- "wt: $label: $cmd"
     ( cd "$dir" && eval "$cmd" ) || {
       print -u2 -- "wt: $label fehlgeschlagen: $cmd"
       return 1
@@ -1785,14 +1811,14 @@ Im `case` von `main` ergänzen:
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `bats tests/wt/new.bats`
-Expected: 9 Tests PASS
+Run: `bats tests/new.bats`
+Expected: 10 Tests PASS
 
 - [ ] **Step 5: Gesamtsuite und Syntax prüfen**
 
 ```bash
-zsh -n .local/bin/wt
-bats tests/wt/
+zsh -n bin/wt
+bats tests/
 ```
 
 Expected: alle Tests PASS
@@ -1800,8 +1826,8 @@ Expected: alle Tests PASS
 - [ ] **Step 6: Commit**
 
 ```bash
-git add .local/bin/wt tests/wt/new.bats
-git commit -m "feat(wt): wire up wt new with a dry-run mode"
+git add bin/wt tests/new.bats
+git commit -m "feat: wire up wt new with a dry-run mode"
 ```
 
 ---
@@ -1809,8 +1835,8 @@ git commit -m "feat(wt): wire up wt new with a dry-run mode"
 ### Task 8: `wt ls`, `up`, `down`, `rm`, `prune`
 
 **Files:**
-- Modify: `.local/bin/wt`
-- Create: `tests/wt/lifecycle.bats`
+- Modify: `bin/wt`
+- Create: `tests/lifecycle.bats`
 
 **Interfaces:**
 - Consumes: alles aus Task 2–7
@@ -1818,7 +1844,7 @@ git commit -m "feat(wt): wire up wt new with a dry-run mode"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/lifecycle.bats`:
+`tests/lifecycle.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -1928,12 +1954,12 @@ JSON
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/lifecycle.bats`
+Run: `bats tests/lifecycle.bats`
 Expected: FAIL — `noch nicht implementiert: ls`
 
 - [ ] **Step 3: Die Lebenszyklus-Kommandos implementieren**
 
-In `.local/bin/wt` einfügen:
+In `bin/wt` einfügen:
 
 ```zsh
 # Zustand eines Slugs holen oder mit Klartext scheitern.
@@ -2029,7 +2055,7 @@ cmd_rm() {
 
   [[ -d $path ]] && wt_worktree_remove "$repo" "$path"
   wt_state_delete "$slug"
-  print -- "wt: $slug entfernt"
+  print -u2 -- "wt: $slug entfernt"
 }
 
 cmd_prune() {
@@ -2066,16 +2092,16 @@ cmd_prune() {
   fi
 
   if (( ${#candidates} == 0 )); then
-    print -- "wt: nichts abzuräumen"
+    print -u2 -- "wt: nichts abzuräumen"
     return 0
   fi
 
-  print -- "wt: in $base gemergt: ${candidates[*]}"
+  print -u2 -- "wt: in $base gemergt: ${candidates[*]}"
   if (( ! yes )); then
     print -n -- "wt: entfernen? [j/N] "
     local answer
     read -r answer
-    [[ $answer == (j|J|y|Y) ]] || { print -- "wt: abgebrochen"; return 0 }
+    [[ $answer == (j|J|y|Y) ]] || { print -u2 -- "wt: abgebrochen"; return 0 }
   fi
 
   local s
@@ -2099,16 +2125,16 @@ Hinweis zu `up`: Es benutzt bewusst dieselbe `setup`-Liste. Weil Setup idempoten
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `bats tests/wt/lifecycle.bats`
+Run: `bats tests/lifecycle.bats`
 Expected: 8 Tests PASS
 
 - [ ] **Step 5: Gesamtsuite, Syntax, Commit**
 
 ```bash
-zsh -n .local/bin/wt
-bats tests/wt/
-git add .local/bin/wt tests/wt/lifecycle.bats
-git commit -m "feat(wt): add ls, up, down, rm and prune"
+zsh -n bin/wt
+bats tests/
+git add bin/wt tests/lifecycle.bats
+git commit -m "feat: add ls, up, down, rm and prune"
 ```
 
 ---
@@ -2116,8 +2142,8 @@ git commit -m "feat(wt): add ls, up, down, rm and prune"
 ### Task 9: `wt doctor`
 
 **Files:**
-- Modify: `.local/bin/wt`
-- Create: `tests/wt/doctor.bats`
+- Modify: `bin/wt`
+- Create: `tests/doctor.bats`
 
 **Interfaces:**
 - Consumes: `wt_config_load`, `wt_config_path`, `wt_compose_supports_override`
@@ -2125,7 +2151,7 @@ git commit -m "feat(wt): add ls, up, down, rm and prune"
 
 - [ ] **Step 1: Den fehlschlagenden Test schreiben**
 
-`tests/wt/doctor.bats`:
+`tests/doctor.bats`:
 
 ```bash
 #!/usr/bin/env bats
@@ -2200,7 +2226,7 @@ JSON
 
 - [ ] **Step 2: Tests laufen lassen, Fehlschlag bestätigen**
 
-Run: `bats tests/wt/doctor.bats`
+Run: `bats tests/doctor.bats`
 Expected: FAIL — `noch nicht implementiert: doctor`
 
 - [ ] **Step 3: `cmd_doctor` implementieren**
@@ -2346,7 +2372,7 @@ cmd_doctor() {
     [[ -f $path ]] && wt_die "$path existiert bereits — nicht überschrieben"
     mkdir -p "${path:h}"
     printf '%s\n' "$suggestion" | jq . > "$path"
-    print -- "wt: geschrieben nach $path"
+    print -u2 -- "wt: geschrieben nach $path"
     return 0
   fi
 
@@ -2370,15 +2396,15 @@ Die Zeile `new|ls|up|down|rm|prune|ports|config|doctor) wt_die "noch nicht imple
 
 - [ ] **Step 4: Tests laufen lassen**
 
-Run: `bats tests/wt/doctor.bats`
+Run: `bats tests/doctor.bats`
 Expected: 7 Tests PASS
 
 - [ ] **Step 5: Gesamtsuite und Syntax prüfen**
 
 ```bash
-zsh -n .local/bin/wt
-for f in .local/lib/wt/*.zsh; do zsh -n "$f" || echo "SYNTAX: $f"; done
-bats tests/wt/
+zsh -n bin/wt
+for f in lib/*.zsh; do zsh -n "$f" || echo "SYNTAX: $f"; done
+bats tests/
 ```
 
 Expected: alle Tests PASS, keine Syntaxmeldung
@@ -2386,8 +2412,8 @@ Expected: alle Tests PASS, keine Syntaxmeldung
 - [ ] **Step 6: Commit**
 
 ```bash
-git add .local/bin/wt tests/wt/doctor.bats
-git commit -m "feat(wt): add doctor to bootstrap a project configuration"
+git add bin/wt tests/doctor.bats
+git commit -m "feat: add doctor to bootstrap a project configuration"
 ```
 
 ---
@@ -2395,7 +2421,7 @@ git commit -m "feat(wt): add doctor to bootstrap a project configuration"
 ### Task 10: Verlinken und gegen ein echtes Repo verifizieren
 
 **Files:**
-- Modify: `README.md` (Abschnitt zu `wt`)
+- Create: `README.md`
 
 **Interfaces:**
 - Consumes: alles
@@ -2403,12 +2429,11 @@ git commit -m "feat(wt): add doctor to bootstrap a project configuration"
 
 - [ ] **Step 1: `wt` in den PATH bringen**
 
-Weil `~/.local/bin` ein echtes Verzeichnis ist und `stow` bei echten Dateien im Ziel abbricht, wird gezielt verlinkt statt gestowt:
+Nur die eine Datei wird verlinkt; die Bibliothek findet sich über `${0:A}` von selbst:
 
 ```bash
-mkdir -p ~/.local/bin ~/.local/lib
-ln -sfn ~/dotfiles/.local/bin/wt  ~/.local/bin/wt
-ln -sfn ~/dotfiles/.local/lib/wt  ~/.local/lib/wt
+mkdir -p ~/.local/bin
+ln -sfn ~/development/wt/bin/wt ~/.local/bin/wt
 hash -r
 wt --version
 ```
@@ -2421,7 +2446,7 @@ Expected: `wt 0.1.0`
 env -u WT_LIB wt help
 ```
 
-Expected: die Hilfe erscheint — belegt, dass `${0:A:h:h}/lib/wt` durch den Symlink hindurch auflöst.
+Expected: die Hilfe erscheint — belegt, dass `${0:A:h:h}/lib` durch den Symlink hindurch auflöst. Ohne diesen Schritt fällt ein kaputter Pfad erst im Alltag auf, weil die Tests `WT_LIB` explizit setzen.
 
 - [ ] **Step 3: Gegen die Dotfiles selbst durchspielen**
 
@@ -2447,12 +2472,12 @@ wt ls
 
 Expected: Workspace erscheint in der Sidebar mit dem Label `dotfiles-probe`, `wt ls` listet ihn, nach `wt rm` ist er in beiden Ausgaben verschwunden.
 
-- [ ] **Step 5: `README.md` ergänzen**
+- [ ] **Step 5: `README.md` anlegen**
 
-Diesen Abschnitt am Ende von `README.md` anfügen:
+Das Repo hat noch keine. Diesen Inhalt als `README.md` schreiben:
 
 ````markdown
-## wt — Worktree-Arbeitsplätze
+# wt — Worktree-Arbeitsplätze
 
 `wt` macht aus einem Slug einen arbeitsfähigen, isolierten Git-Worktree: eigener
 Branch von der Basis, eigene Ports, eigener Docker-Stack, eigener herdr-Workspace
@@ -2469,9 +2494,24 @@ ohne sich Ports, Container oder Migrationsstände zu teilen.
 | `wt ports <slug>` | Zugeteilte Ports und URLs |
 | `wt doctor [--write]` | Repo untersuchen und eine Projekt-Konfiguration vorschlagen |
 
-Konfiguration liegt pro Repo in `~/.config/wt/<repo-name>.json` — bewusst außerhalb
-des Projekts, damit in fremden Repositories keine Dateien entstehen. Einstieg in
-ein neues Projekt:
+## Installation
+
+```bash
+git clone <remote> ~/development/wt
+ln -sfn ~/development/wt/bin/wt ~/.local/bin/wt
+brew install jq            # zwingend
+brew install bats-core     # nur für die Tests
+```
+
+`wt` braucht sonst nichts: zsh und `nc` liefert macOS mit, `herdr` ist optional
+(ohne läuft es im eingeschränkten Modus und legt nur den Worktree an).
+
+## Konfiguration
+
+Pro Repo eine Datei in `~/.config/wt/<repo-name>.json` — bewusst außerhalb
+des Projekts, damit in fremden Repositories keine Dateien entstehen. Diese Dateien
+liegen versioniert in den Dotfiles unter `.config/wt/`. Einstieg in ein neues
+Projekt:
 
 ```bash
 cd ~/pfad/zum/projekt
@@ -2484,8 +2524,8 @@ Ports werden deterministisch aus dem Slug abgeleitet, derselbe Worktree behält
 also seine URLs. Container werden über `COMPOSE_PROJECT_NAME` getrennt, jeder
 Worktree hat damit eigene Volumes und einen eigenen Migrationsstand.
 
-Entwurf und Begründung der Entscheidungen:
-`docs/superpowers/specs/2026-08-05-worktree-ticket-workflow-design.md`
+Entwurf und Begründung der Entscheidungen liegen im Dotfiles-Repo:
+`~/dotfiles/docs/superpowers/specs/2026-08-05-worktree-ticket-workflow-design.md`
 ````
 
 - [ ] **Step 6: Commit**
