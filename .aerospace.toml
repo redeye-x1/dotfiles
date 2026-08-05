@@ -1,6 +1,11 @@
 # AeroSpace Configuration
 # https://github.com/nikitabobko/AeroSpace
 
+# Config version 2 no longer infers persistent-workspaces from the keyboard
+# bindings, so the six workspaces below are spelled out explicitly.
+config-version = 2
+persistent-workspaces = ['1', '2', '3', '4', '5', '6']
+
 # Start AeroSpace at login
 start-at-login = true
 
@@ -30,7 +35,12 @@ exec-on-workspace-change = [
 # moves away from a closed window, so on-focus-changed covers those in practice.
 # Must stay below the root-level keys above: this is an array of tables, and any
 # bare key after it would be parsed as part of it.
+# 'if = true' matches every window; check-further-callbacks keeps this from
+# swallowing any window rule added later, since this callback only notifies
+# SketchyBar instead of placing the window.
 [[on-window-detected]]
+if = 'true'
+check-further-callbacks = true
 run = ['exec-and-forget sketchybar --trigger aerospace_workspace_change']
 
 # Gaps between windows
