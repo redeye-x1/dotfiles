@@ -16,6 +16,7 @@
 - **Sprache: zsh, nicht bash.** macOS liefert bash 3.2 (keine assoziativen Arrays); zsh 5.9 ist vorhanden und ist die Shell des Benutzers.
 - **Kein `shellcheck`.** Es unterstützt zsh nicht. Lint-Schritt ist `zsh -n <datei>` für jede Datei.
 - **Port-Prüfung: `nc -z 127.0.0.1 <port>`, Exit 0 = belegt.** Verifiziert am 2026-08-05. **Nicht** `-G 1` ergänzen — damit liefert `nc` auch bei belegtem Port Exit 1 und die Prüfung wird wertlos.
+- **Kein `ß` in bats-Testnamen, und die Testzahl ist Teil des Ergebnisses.** `bats` 1.14 verstümmelt `ß` beim Bilden des internen Funktionsnamens; der Test wird dann **stillschweigend nicht ausgeführt** und `bats` endet trotzdem mit Exit 0 — nur eine Warnzeile `Executed N instead of expected M tests` verrät es. Umlaute (`ä ö ü`) funktionieren nachweislich (20 Testnamen im Plan). Betroffene Namen werden **umformuliert**, nicht in ASCII umgeschrieben („ohne Git-Repository" statt „außerhalb eines Git-Repos"). Nach jedem Testlauf gilt: die Zahl ausgeführter Tests muss der erwarteten entsprechen und es darf keine `bats warning`-Zeile erscheinen. Ein grüner Exit-Code allein ist kein Nachweis.
 - **Niemals `local path` in zsh.** `path` ist an `PATH` gekoppelt (als Array); eine lokale Deklaration leert `PATH` im gesamten Funktionsrumpf, und jeder Aufruf eines externen Kommandos scheitert mit „command not found". Nachgewiesen am 2026-08-05: `zsh -c 'f() { local path; echo "[$PATH]" }; f'` gibt `[]` aus. Dieser Plan benutzt deshalb `wt_path`, `cfg_path` und `jq_path`. Dasselbe gilt für die weiteren gekoppelten Namen `cdpath`, `fpath`, `manpath`. **Die Abhilfe ist immer der andere Variablenname — nie ein Retten und Wiederherstellen von `PATH`.** In den bats-Tests (bash) ist `path` unproblematisch und bleibt.
 - **Kein `setopt err_return`.** In zsh bricht damit auch ein `[[ bedingung ]] && aktion` mit falscher Bedingung die ganze Funktion ab, weil die Kette Exit 1 liefert. Fehlerbehandlung läuft ausschließlich explizit über `|| wt_die` bzw. `|| return 1`. Gesetzt werden nur `no_unset` und `pipe_fail`.
 - **`herdr workspace close` nimmt die ID positional** (`herdr workspace close w9`), **nicht** als `--workspace`. Verifiziert am 2026-08-05. Gleiches gilt für `workspace focus`.
@@ -395,7 +396,7 @@ JSON
   [[ "$output" == *"projekt.json"* ]]
 }
 
-@test "außerhalb eines Git-Repos bricht es mit Klartext ab" {
+@test "ohne Git-Repository bricht es mit Klartext ab" {
   cd "$WT_TMP"
   run wt config show --json
   [ "$status" -eq 1 ]
@@ -467,8 +468,10 @@ wt_config_defaults() {
 JSON
 }
 
-# Vollständige Konfiguration auf stdout. Flache Überlagerung: ein vom Benutzer
-# gesetzter Schlüssel ersetzt den Vorgabewert ganz, nicht teilweise.
+# Vollständige Konfiguration auf stdout. jq's * überlagert rekursiv: bei
+# verschachtelten Objekten gewinnt der Benutzerwert je Schlüssel, nicht das
+# ganze Teilobjekt. Für "ports" ist das gewollt — wer nur den Modus setzt,
+# behält die voreingestellten Variablen.
 wt_config_load() {
   local cfg_path defaults user
   cfg_path=$(wt_config_path) || return 1
