@@ -1,6 +1,12 @@
 return {
   paddings = 3,
 
+  -- Height 39 and the edge padding of 10 come from the simple-bar
+  -- customStyles block, so the bar occupies exactly the same strip as before.
+  -- The padding is applied by the click_shield edge items, not by the bar.
+  bar_height = 39,
+  bar_padding = 10,
+
   -- Derived from .simplebarrc: "font": "SF Pro", "fontSize": "11px".
   font = require("helpers.default_font"),
   font_size = 11.0,

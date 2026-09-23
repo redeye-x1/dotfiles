@@ -1,12 +1,13 @@
 local colors = require("colors")
+local settings = require("settings")
 
--- Height 39 and the horizontal padding of 10 come from the simple-bar
--- customStyles block, so the bar occupies exactly the same strip as before.
+-- Padding stays 0: items/click_shield.lua supplies it with edge items, since
+-- its bracket cannot reach into bar padding.
 sbar.bar({
-  height = 39,
+  height = settings.bar_height,
   color = colors.background,
-  padding_left = 10,
-  padding_right = 10,
+  padding_left = 0,
+  padding_right = 0,
   blur_radius = 0,
   position = "top",
   sticky = true,
