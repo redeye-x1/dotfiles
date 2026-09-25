@@ -17,6 +17,13 @@ local settings = require("settings")
 -- left items line up in the order they are added, right items leftwards, so
 -- adding these first puts them at the outer ends. Remove the lot, and restore
 -- the bar padding, once upstream fixes the ordering.
+--
+-- The bracket itself, on the other hand, has to be added last, which is why
+-- this file returns a function for items/init.lua to call at the end. A click
+-- that lands on any bracket window is resolved by cursor position, and
+-- sketchybar hands it to the first item in creation order whose window contains
+-- the cursor -- brackets included. Created early, the full-width shield wins
+-- that lookup over every workspace and swallows the click.
 local edges = {}
 for _, side in ipairs({ "left", "right" }) do
   edges[#edges + 1] = "click_shield." .. side
@@ -33,10 +40,12 @@ for _, side in ipairs({ "left", "right" }) do
   })
 end
 
-sbar.add("bracket", "click_shield", edges, {
-  background = {
-    drawing = true,
-    color = 0x00000000,
-    height = settings.bar_height,
-  },
-})
+return function()
+  sbar.add("bracket", "click_shield", edges, {
+    background = {
+      drawing = true,
+      color = 0x00000000,
+      height = settings.bar_height,
+    },
+  })
+end
