@@ -12,11 +12,17 @@ local BADGE_POLL_SECONDS = 7
 
 local workspaces = {}
 local badges = {}
+local holes = {}
 
--- Which workspace currently holds BADGE_APP, and whether it has a badge. The
+-- Which workspace currently holds BADGE_APP, and what kind of badge it has. The
 -- two are found by separate queries, so keep both and re-render on either.
 local badge_workspace = nil
-local badge_active = false
+local badge_state = "none" -- "none" | "channel" | "direct"
+
+-- The hole punched into the badge is filled with the colour of the pill behind
+-- it, so it has to know which pill is focused. update() is the only writer and
+-- it runs on every focus change, so this cannot lag behind what is on screen.
+local focused_workspace = nil
 
 -- Fired by exec-on-workspace-change in .aerospace.toml.
 sbar.add("event", "aerospace_workspace_change")
@@ -25,10 +31,21 @@ local function icon_for(app)
   return app_icons_local[app] or app_icons[app] or app_icons["Default"]
 end
 
+-- Both states are the same red dot at the same size. What separates them is the
+-- hole: a message aimed at you fills the dot solid, activity in a channel you
+-- merely sit in punches the pill's colour out of the middle. Fill is the only
+-- variable, which is the same outline-means-less language the pills themselves
+-- use for an empty workspace.
 local function render_badges()
   for i = 1, WORKSPACE_COUNT do
-    badges[i]:set({
-      drawing = badge_active and badge_workspace == tostring(i),
+    local key = tostring(i)
+    local on = badge_state ~= "none" and badge_workspace == key
+    badges[i]:set({ drawing = on })
+    holes[i]:set({
+      drawing = on and badge_state == "channel",
+      icon = {
+        color = focused_workspace == key and colors.accent or colors.minor,
+      },
     })
   end
 end
@@ -63,6 +80,7 @@ local function update()
     local badge_glyph = {}
     local seen_apps = {}
     badge_workspace = nil
+    focused_workspace = nil
 
     -- Lua 5.5 makes the generic-for variable const, so trim into a new local.
     for raw in output:gmatch("[^\n]+") do
@@ -89,6 +107,8 @@ local function update()
         end
       end
     end
+
+    focused_workspace = focused
 
     for i = 1, WORKSPACE_COUNT do
       local key = tostring(i)
@@ -192,11 +212,18 @@ for i = 1, WORKSPACE_COUNT do
     icon = {
       string = "􀀁",
       color = colors.red,
-      font = { size = 6.0 },
+      -- 8pt rather than the 6pt this started at. The hole has to survive inside
+      -- the dot, and at 6pt the remaining rim was thinner than a pixel. Bold
+      -- because SF Symbols take their weight from the font style.
+      font = {
+        family = settings.font.text,
+        style = settings.font.style_map["Bold"],
+        size = 8.0,
+      },
       padding_left = 0,
       -- Pushes the dot left, off the pill's edge and onto the icon's corner.
       -- Grows in step with padding_left below so the badge stays free of charge.
-      padding_right = 7,
+      padding_right = 5,
     },
     label = { drawing = false },
     -- Overlaps the app icon before it instead of sitting beside it, and costs no
@@ -208,7 +235,52 @@ for i = 1, WORKSPACE_COUNT do
     -- have to move together, or it starts costing pill again.
     padding_left = -14,
     padding_right = 0,
-    y_offset = 5,
+    y_offset = 6,
+    click_script = settings.close_popups .. "; aerospace workspace " .. i,
+  })
+
+  -- The hole. A second item because one item cannot stack two glyphs: its icon
+  -- and label sit side by side, never on top of one another. Added straight
+  -- after the badge so it draws over it -- sketchybar paints in item order.
+  --
+  -- The four numbers below centre it inside the dot and cost no width doing so.
+  -- They are tuned against the badge's own size and padding, so changing either
+  -- glyph's size means re-centring this one by eye.
+  holes[i] = sbar.add("item", "workspace." .. i .. ".hole", {
+    position = "left",
+    drawing = false,
+    background = { drawing = false },
+    icon = {
+      string = "􀀁",
+      -- Corrected by render_badges before it is ever drawn; a focused pill needs
+      -- accent here instead, or the hole reads as a dark dot rather than a hole.
+      color = colors.minor,
+      -- circle.fill draws a circle exactly as wide as its font size, so this is
+      -- the hole's diameter in points: 3pt punched out of the 8pt dot, leaving a
+      -- 2.5pt rim.
+      font = {
+        family = settings.font.text,
+        style = settings.font.style_map["Bold"],
+        size = 3.0,
+      },
+      padding_left = 0,
+      padding_right = 0,
+    },
+    label = { drawing = false },
+    -- Centred by measurement rather than by eye, against a screenshot of the
+    -- rendered bar: the rim comes out 5 retina pixels on all four sides.
+    --
+    -- padding_left sets where the hole sits, padding_right only pays for its
+    -- width -- so re-centre with the former and restore width neutrality with
+    -- the latter, in that order. At pr=8 the hole cost the pill 1pt; 7 is the
+    -- value at which drawing it moves nothing to its right.
+    --
+    -- Half a pixel is the floor on how well this can centre: sketchybar
+    -- truncates padding and y_offset to integers, so a 0.25pt correction is not
+    -- expressible. Do not chase it.
+    padding_left = -11,
+    padding_right = 7,
+    y_offset = 7,
     click_script = settings.close_popups .. "; aerospace workspace " .. i,
   })
 
@@ -231,7 +303,8 @@ for i = 1, WORKSPACE_COUNT do
   end
 
   sbar.add("bracket", "workspace." .. i .. ".bracket",
-    { "workspace." .. i, "workspace." .. i .. ".badge" }, {
+    { "workspace." .. i, "workspace." .. i .. ".badge",
+      "workspace." .. i .. ".hole" }, {
       background = {
         color = colors.minor,
         corner_radius = settings.item_radius,
@@ -270,7 +343,18 @@ local badge_poll = sbar.add("item", "workspace.badge_poll", {
 badge_poll:subscribe({ "routine", "forced", "system_woke" }, function()
   sbar.exec(BADGE_QUERY, function(output)
     local value = (output or ""):match("^%s*(.-)%s*$")
-    badge_active = value ~= ""
+    -- Slack writes a bare "•" when the only unread traffic is in channels you
+    -- sit in, and the count itself once something is addressed to you. Anything
+    -- else non-empty is treated as addressed to you on purpose: if Slack ever
+    -- changes or localises that marker, the failure is a solid dot you did not
+    -- need rather than silence on a message you did.
+    if value == "" then
+      badge_state = "none"
+    elseif value == "•" then
+      badge_state = "channel"
+    else
+      badge_state = "direct"
+    end
     render_badges()
   end)
 end)
