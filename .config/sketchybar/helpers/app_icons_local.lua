@@ -31,10 +31,11 @@ return {
   -- same one Canary/MailMate/Spark get.
   ["Zoho Mail - Desktop"] = ":mail:",
 
-  -- Search, a browser (com.officecommun.search). No glyph of its own; the
-  -- magnifying glass matches the name better than borrowing another browser's
-  -- logo. Magnifier is not installed here, so the glyph is not shared.
-  ["Search"] = ":magnifier:",
+  -- Search, a browser (com.officecommun.search). The font has neither its logo
+  -- nor a generic globe, so it borrows Safari's compass, the closest thing to a
+  -- generic "web browser" glyph. Safari is installed but rarely open, so the two
+  -- seldom share a pill.
+  ["Search"] = ":safari:",
 
   -- Amphetamine deliberately stays on :default:. The font has no keep-awake or
   -- caffeine glyph, and :clock: or :timery: would say the wrong thing.
