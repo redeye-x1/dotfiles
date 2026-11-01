@@ -4,7 +4,9 @@
 
 set -e
 
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# ~/.ssh is stowed from the dotfiles repo, so keys written here land in
+# ~/dotfiles/.ssh, where .gitignore keeps them out of git.
+SSH_DIR="$HOME/.ssh"
 
 echo "=== SSH Key Setup from Bitwarden ==="
 echo ""
@@ -64,9 +66,8 @@ fi
 
 export BW_SESSION
 
-# Create .ssh directory in dotfiles repo (for stow)
-mkdir -p "$DOTFILES_DIR/ssh/.ssh"
-chmod 700 "$DOTFILES_DIR/ssh/.ssh"
+mkdir -p "$SSH_DIR"
+chmod 700 "$SSH_DIR"
 
 echo ""
 echo "Looking for 'SSH Keys' folder in Bitwarden..."
@@ -144,11 +145,8 @@ else
             continue
         fi
         
-        OUTPUT_FILE="$DOTFILES_DIR/ssh/.ssh/id_ed25519_$SAFE_NAME"
+        OUTPUT_FILE="$SSH_DIR/id_ed25519_$SAFE_NAME"
         
-        # Ensure .ssh directory exists in dotfiles repo
-        mkdir -p "$DOTFILES_DIR/ssh/.ssh"
-        chmod 700 "$DOTFILES_DIR/ssh/.ssh"
         
         # Check if file already exists
         if [ -f "$OUTPUT_FILE" ]; then
@@ -177,8 +175,7 @@ echo ""
 if [ $KEYS_FOUND -eq 1 ]; then
     echo "=== SSH keys setup complete! ==="
     echo ""
-    echo "Keys downloaded to: $DOTFILES_DIR/ssh/.ssh/"
-    echo "(They will be symlinked to ~/.ssh/ when you run stow)"
+    echo "Keys downloaded to: $SSH_DIR/"
 else
     echo "=== Warning: No SSH keys were found in Bitwarden ==="
     echo "Please add your SSH keys to Bitwarden first."

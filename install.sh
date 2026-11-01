@@ -67,6 +67,17 @@ mkdir -p "$HOME/.ssh/sockets"
 
 echo ""
 
+# 3b. SSH keys from Bitwarden. Runs after stow so the keys land in the
+# symlinked ~/.ssh, and before step 7, which needs id_ed25519_github.
+read -r -p "Set up SSH keys from Bitwarden now? [y/N] " reply
+if [[ $reply =~ ^[Yy]$ ]]; then
+    "$DOTFILES_DIR/bootstrap-ssh.sh"
+else
+    echo "Skipped, run ./bootstrap-ssh.sh later to fetch the keys"
+fi
+
+echo ""
+
 # 4. Install Homebrew packages via Brewfile
 echo "Step 4: Installing Homebrew packages from Brewfile..."
 
