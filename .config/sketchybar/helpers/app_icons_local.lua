@@ -26,6 +26,10 @@ return {
   -- and left the literal text ":pen:" in the pill until a script was rerun.
   ["Pen"] = ":notability:",
 
+  -- The font has :t3_code: since v3, but only for "T3 Code"; the beta build
+  -- reports itself with the suffix.
+  ["T3 Code (Beta)"] = ":t3_code:",
+
   -- The font has no Zoho glyph, and the app reports itself with the "- Desktop"
   -- suffix, so the upstream ["Mail"] entry never matches. Generic envelope, the
   -- same one Canary/MailMate/Spark get.
