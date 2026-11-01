@@ -25,7 +25,8 @@ find ~ -maxdepth 3 -path ~/Library -prune -o -type l -lname "$HOME/dotfiles/*" -
 ```
 
 Delete each one it prints with `rm <path>`. They only point into the repo, so
-nothing is lost.
+nothing is lost. Links inside old `~/dotfiles_backup_*` folders can be ignored;
+they don't block stow.
 
 Then remove the T3 files stow should link instead (T3 must be quit):
 
