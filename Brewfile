@@ -15,6 +15,10 @@ brew "zoxide"
 brew "yazi"
 brew "superfile"
 brew "stow"
+brew "gh"
+# .zshrc puts these on PATH ahead of the system versions
+brew "unzip"
+brew "python@3.12"
 
 # ── Shell plugins ──────────────────────────────────────────────────
 brew "powerlevel10k"
@@ -25,6 +29,8 @@ brew "zsh-completions"
 
 # ── Terminal ───────────────────────────────────────────────────────
 cask "wezterm"
+# The font .wezterm.lua asks for
+cask "font-jetbrains-mono-nerd-font"
 
 # ── Language runtimes ──────────────────────────────────────────────
 brew "nvm"
@@ -51,6 +57,9 @@ cask "sf-symbols"
 # App icons for the SketchyBar workspace items
 cask "font-sketchybar-app-font"
 
+# ── Secrets ────────────────────────────────────────────────────────
+# bootstrap-ssh.sh pulls the SSH keys out of Bitwarden with it
+brew "bitwarden-cli"
+
 # ── Optional (uncomment if needed) ─────────────────────────────────
 # cask "docker"
-# brew "bitwarden-cli"
