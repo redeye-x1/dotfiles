@@ -37,12 +37,14 @@ My personal macOS development environment setup with automated installation.
 
    The script will:
    - Install Homebrew (if not already installed)
-   - Prompt you to set up SSH keys from Bitwarden
-   - Symlink all dotfiles via GNU Stow
-   - Install all packages from the `Brewfile`
+   - Symlink all dotfiles via GNU Stow (existing files are backed up first)
+   - Ask whether to fetch SSH keys from Bitwarden (`bootstrap-ssh.sh`)
+   - Trust the `FelixKratz/formulae` tap and install everything in the `Brewfile`
    - Set up Node.js LTS via NVM
-   - Build SbarLua and the SketchyBar event providers
+   - Build SbarLua (aborting if Homebrew's Lua doesn't match its version) and the SketchyBar event providers
    - Start SketchyBar and Borders
+   - Ask whether the wifi widget may show the network name (needs sudo)
+   - Switch this repo's remote to SSH if the GitHub key is present
 
 3. **Restart your terminal** to apply all changes.
 
@@ -50,13 +52,21 @@ My personal macOS development environment setup with automated installation.
 
 ```
 dotfiles/
+├── .claude/
+│   ├── CLAUDE.md          # Global Claude Code instructions
+│   └── settings.json      # Claude Code settings, permissions, hooks
 ├── .config/
+│   ├── ccstatusline/      # Claude Code status line
 │   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)
 │   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
 │   ├── sketchybar/        # SketchyBar status bar (Lua + C event providers)
+│   ├── superfile/         # superfile (spf) file manager config + hotkeys
+│   ├── television/        # television fuzzy finder config
 │   └── yazi/              # Yazi file manager config
 ├── .ssh/
 │   └── config             # SSH host configuration (multiplexed connections)
+├── Library/LaunchAgents/  # Borders LaunchAgent (window borders at login)
+├── docs/                  # Design specs (not stowed)
 ├── .zshrc                 # Zsh configuration (plugins, aliases, tools)
 ├── .zprofile              # Zsh profile (Homebrew init)
 ├── .p10k.zsh              # Powerlevel10k theme config
@@ -82,8 +92,22 @@ dotfiles/
 | `lg` | `lazygit` | Git TUI |
 | `ld` | `lazydocker` | Docker/Podman TUI |
 | `reload` | `source ~/.zshrc` | Reload shell config |
+| `..` / `...` | `cd ..` / `cd ../..` | Go up one or two directories |
+| `ports` | `lsof -iTCP -sTCP:LISTEN -P -n` | List listening TCP ports |
+| `ip` | `curl -s ifconfig.me` | Show public IP |
+| `hs` | `history 1` | Full shell history |
+| `cc` | `claude --dangerously-skip-permissions` | Claude Code without permission prompts |
+| `ctg` | `claude --channels plugin:telegram@… --dangerously-skip-permissions` | Claude Code with the Telegram channel |
 | `cddev` | `cd ~/development` | Jump to dev directory |
 | `cddot` | `cd ~/dotfiles` | Jump to dotfiles |
+
+`spf` wraps superfile so it uses the config in this repo and leaves the shell in the last directory when you quit.
+
+The `cd<name>` functions come from `~/.config/directories` (`name=/path` per line). That file is gitignored, so each machine keeps its own.
+
+### History
+
+50,000 entries, shared live across all open terminals, older duplicates dropped. Commands starting with a space are not saved.
 
 ### Zoxide -- Smart Directory Jumping
 
@@ -151,7 +175,7 @@ All styled in Nord colors.
 | `diff.algorithm = histogram` | Better diff output, especially for moved code |
 | `fetch.prune = true` | Auto-removes stale remote-tracking branches on fetch |
 | `branch.sort = -committerdate` | Branches sorted by most recently committed |
-| HTTPS-to-SSH rewrite | All `https://github.com/` URLs auto-convert to SSH |
+| `pushInsteadOf` for GitHub | Pushes to `https://github.com/` URLs go over SSH; fetches stay on HTTPS so Homebrew and plugin clones work before the keys exist |
 
 ### Multiple GitHub Accounts
 
@@ -201,7 +225,17 @@ Shows current working directory, git branch, and git status (staged/modified/unt
 | `Hyper + f` | Fullscreen |
 | `Hyper + s` | Vertical accordion (stack) |
 | `Hyper + t` | Tiles layout |
-| `Hyper + r` | Enter resize mode (then h/j/k/l to resize) |
+| `Hyper + e` | Horizontal accordion |
+| `Hyper + r` | Enter resize mode (then h/j/k/l to resize, Enter/Esc to leave) |
+
+Uses config version 2 with six persistent workspaces. Workspace, focus and new-window events trigger SketchyBar so the workspace app icons stay current.
+
+## SketchyBar
+
+Written in Lua via [SbarLua](https://github.com/FelixKratz/SbarLua). Left: AeroSpace workspaces with app icons and unread badges. Right: network, CPU, memory, battery, sound, mic, wifi, date/time. The CPU and network widgets are fed by small C event providers in `helpers/event_providers`, built by `install.sh`.
+
+- **Lua version**: SbarLua builds against Lua 5.5. If Homebrew's `lua` moves to a different major.minor, the bar segfaults silently, so `install.sh` refuses to continue on a mismatch.
+- **App icons**: `helpers/app_icons.lua` is generated from the `mappings/` directory of [sketchybar-app-font](https://github.com/kvndrsslr/sketchybar-app-font) at the tag the cask installs (currently v3.0.14). Regenerate it after a font upgrade. Put your own overrides in `helpers/app_icons_local.lua`.
 
 ## SSH Configuration
 
@@ -245,13 +279,25 @@ brew bundle cleanup            # remove packages not in Brewfile
 brew bundle dump --force       # regenerate Brewfile from installed packages
 ```
 
+`borders` and `sketchybar` come from the `FelixKratz/formulae` tap, which Homebrew only loads after `brew trust FelixKratz/formulae`. `install.sh` does this for you.
+
+## Claude Code
+
+`~/.claude/CLAUDE.md` and `~/.claude/settings.json` are stowed from `.claude/`.
+
+- Answers are in English. The `language: "German"` setting only sets the voice dictation language.
+- Subagents run on Sonnet (`CLAUDE_CODE_SUBAGENT_MODEL`).
+- Hooks report agent status to Orca. They do nothing when Orca isn't installed.
+- The status line comes from `.config/ccstatusline/`.
+
 ## SSH Key Management (Bitwarden)
 
 ### How It Works
 
 The `bootstrap-ssh.sh` script auto-discovers all SSH keys from a Bitwarden folder named **"SSH Keys"**:
 
-- Item names are sanitized and become filenames: `GitHub` -> `~/.ssh/id_ed25519_github`
+- Item names are sanitized and become filenames: `GitHub` -> `~/.ssh/id_ed25519_github` (since `~/.ssh` is stowed, the files live in `~/dotfiles/.ssh`, where `.gitignore` keeps them out of git)
+- Installs `bitwarden-cli` and `jq` if missing
 - Keys are downloaded with correct permissions (600)
 - Existing keys prompt before overwriting
 

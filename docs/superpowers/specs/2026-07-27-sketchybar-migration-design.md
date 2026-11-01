@@ -1,7 +1,7 @@
 # SketchyBar-Migration — Design
 
 Datum: 2026-07-27
-Status: freigegeben
+Status: umgesetzt (3cfd7dd, simple-bar entfernt in 861331a)
 
 ## Motivation
 
