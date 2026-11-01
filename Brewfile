@@ -8,7 +8,6 @@ brew "fzf"
 brew "eza"
 brew "tree-sitter"
 brew "jq"
-brew "bats-core"
 brew "lazygit"
 brew "lazydocker"
 brew "zoxide"
@@ -56,10 +55,3 @@ cask "font-symbols-only-nerd-font"
 cask "sf-symbols"
 # App icons for the SketchyBar workspace items
 cask "font-sketchybar-app-font"
-
-# ── Secrets ────────────────────────────────────────────────────────
-# bootstrap-ssh.sh pulls the SSH keys out of Bitwarden with it
-brew "bitwarden-cli"
-
-# ── Optional (uncomment if needed) ─────────────────────────────────
-# cask "docker"

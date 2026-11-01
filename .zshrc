@@ -115,11 +115,6 @@ export MANROFFOPT="-c"
 alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
 export PATH=$PATH:$HOME/.maestro/bin
 
-# Added by GitButler installer
-if command -v but >/dev/null 2>&1; then
-  eval "$(but completions zsh)"
-fi
-
 # ── Maus-Reporting am Prompt zurücksetzen ──────────────────────────
 # Verhindert, dass hängengebliebenes SGR-Mouse-Tracking (z.B. nach einem
 # Claude-Code-Session-Resume) rohe Sequenzen wie "35;x;yM" ins Terminal

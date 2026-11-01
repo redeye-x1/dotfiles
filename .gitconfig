@@ -39,6 +39,6 @@
 
 # Push over SSH, fetch over HTTPS. A plain insteadOf would also route
 # Homebrew taps and lazy.nvim plugin clones through SSH, which fails on a fresh
-# machine before bootstrap-ssh.sh has put the keys in place.
+# machine before the SSH keys are in place.
 [url "git@github.com:"]
 	pushInsteadOf = https://github.com/

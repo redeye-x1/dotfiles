@@ -5,7 +5,6 @@ My personal macOS development environment setup with automated installation.
 ## Features
 
 - **Automated Installation**: One command to set up everything via `install.sh` + declarative `Brewfile`
-- **Secure SSH Key Management**: Store SSH keys securely in Bitwarden, auto-sync across machines
 - **Window Management**: AeroSpace tiling window manager with SketchyBar status bar
 - **Terminal**: WezTerm (GPU-accelerated) with workspace persistence, pane management, and quick-select
 - **Shell**: Zsh with Powerlevel10k, autosuggestions, syntax highlighting, fuzzy finding, and smart directory jumping
@@ -19,7 +18,6 @@ My personal macOS development environment setup with automated installation.
 
 - macOS (tested on Apple Silicon, works on Intel too)
 - Git (pre-installed on macOS)
-- A Bitwarden account (optional, for SSH key management)
 
 ### Installation
 
@@ -38,7 +36,6 @@ My personal macOS development environment setup with automated installation.
    The script will:
    - Install Homebrew (if not already installed)
    - Symlink all dotfiles via GNU Stow (existing files are backed up first)
-   - Ask whether to fetch SSH keys from Bitwarden (`bootstrap-ssh.sh`)
    - Trust the `FelixKratz/formulae` tap and install everything in the `Brewfile`
    - Set up Node.js LTS via NVM
    - Build SbarLua (aborting if Homebrew's Lua doesn't match its version) and the SketchyBar event providers
@@ -61,7 +58,6 @@ dotfiles/
 │   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
 │   ├── sketchybar/        # SketchyBar status bar (Lua + C event providers)
 │   ├── superfile/         # superfile (spf) file manager config + hotkeys
-│   ├── television/        # television fuzzy finder config
 │   └── yazi/              # Yazi file manager config
 ├── .ssh/
 │   └── config             # SSH host configuration (multiplexed connections)
@@ -77,7 +73,6 @@ dotfiles/
 ├── .gitignore             # Prevents committing SSH private keys
 ├── Brewfile               # Declarative Homebrew package list
 ├── install.sh             # Main installation script
-├── bootstrap-ssh.sh       # SSH key setup from Bitwarden
 └── README.md              # This file
 ```
 
@@ -243,7 +238,7 @@ Written in Lua via [SbarLua](https://github.com/FelixKratz/SbarLua). Left: AeroS
 
 SSH connections are multiplexed -- after the first connection to a host, subsequent connections reuse the same socket for 10 minutes. This makes `git push`, `git pull`, and repeated SSH commands near-instant (no handshake overhead).
 
-Configured hosts are defined in `.ssh/config` with per-host identity files managed via Bitwarden.
+Configured hosts are defined in `.ssh/config` with per-host identity files.
 
 ## Neovim
 
@@ -290,27 +285,11 @@ brew bundle dump --force       # regenerate Brewfile from installed packages
 - Hooks report agent status to Orca. They do nothing when Orca isn't installed.
 - The status line comes from `.config/ccstatusline/`.
 
-## SSH Key Management (Bitwarden)
+## SSH Keys
 
-### How It Works
+Private keys are not part of this repo. On a new machine, copy them into `~/.ssh` by hand (`chmod 600`). Since `~/.ssh` is stowed, the files live in `~/dotfiles/.ssh`, where `.gitignore` keeps them out of git.
 
-The `bootstrap-ssh.sh` script auto-discovers all SSH keys from a Bitwarden folder named **"SSH Keys"**:
-
-- Item names are sanitized and become filenames: `GitHub` -> `~/.ssh/id_ed25519_github` (since `~/.ssh` is stowed, the files live in `~/dotfiles/.ssh`, where `.gitignore` keeps them out of git)
-- Installs `bitwarden-cli` and `jq` if missing
-- Keys are downloaded with correct permissions (600)
-- Existing keys prompt before overwriting
-
-### Adding a New SSH Key
-
-1. Generate: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_newservice -C "your@email.com"`
-2. Add to Bitwarden as a Secure Note in the "SSH Keys" folder
-3. Add a `Host` entry to `.ssh/config`
-4. Run `./bootstrap-ssh.sh` on other machines to sync
-
-### First-Time Bitwarden Setup
-
-See the `bootstrap-ssh.sh` script or run `./install.sh` which walks you through the setup interactively. Supports US, EU, and custom Bitwarden servers.
+To add a key: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_newservice -C "your@email.com"`, then add a `Host` entry to `.ssh/config`.
 
 ## How Stow Works
 
@@ -334,7 +313,7 @@ brew bundle
 
 **Committed**: All configuration files, SSH `config` (no secrets), installation scripts.
 
-**Never committed**: Private SSH keys (stored in Bitwarden), `known_hosts`, API keys, `.env` files.
+**Never committed**: Private SSH keys, `known_hosts`, API keys, `.env` files.
 
 ## Credits
 

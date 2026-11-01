@@ -8,7 +8,6 @@
 
 # Ignore installation scripts
 ^/install\.sh
-^/bootstrap-ssh\.sh
 ^/Brewfile
 
 # Ignore stow configuration
