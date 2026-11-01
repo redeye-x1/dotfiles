@@ -52,6 +52,7 @@ dotfiles/
 ├── .claude/
 │   ├── CLAUDE.md          # Global Claude Code instructions
 │   └── settings.json      # Claude Code settings, permissions, hooks
+├── .t3/userdata/          # T3 Code settings, client settings and keybindings
 ├── .config/
 │   ├── ccstatusline/      # Claude Code status line
 │   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)

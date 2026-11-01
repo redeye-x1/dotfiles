@@ -1,0 +1,22 @@
+{
+  "favorites": [
+    {
+      "provider": "claudeAgent",
+      "model": "claude-opus-5-5"
+    }
+  ],
+  "projectSettingsFolded": true,
+  "enableAgentDeviceAccess": true,
+  "enableDeviceSupport": true,
+  "deviceOnboardingCompleted": true,
+  "idleCompaction": "onReturn",
+  "snoozeLimitedThreads": true,
+  "autoResumeLimitedThreads": true,
+  "linkedEnvironmentsEnabled": true,
+  "providerInstances": {
+    "codex": {
+      "driver": "codex",
+      "enabled": false
+    }
+  }
+}
