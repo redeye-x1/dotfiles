@@ -45,7 +45,6 @@ brew "sketchybar"
 brew "lua"
 
 # ── Container tools ────────────────────────────────────────────────
-brew "podman"
 # Docker engine and docker CLI; replaces Docker Desktop
 cask "orbstack"
 
