@@ -12,3 +12,6 @@
 
 # Ignore stow configuration
 ^/\.stow-local-ignore
+
+# Backups tools write next to their config (gitignored too)
+.*\.bak
