@@ -57,8 +57,7 @@ dotfiles/
 │   ├── nvim/              # Neovim configuration (Kickstart + custom plugins)
 │   ├── directories        # Machine-specific directory shortcuts (cddev, cddot, etc.)
 │   ├── sketchybar/        # SketchyBar status bar (Lua + C event providers)
-│   ├── superfile/         # superfile (spf) file manager config + hotkeys
-│   └── yazi/              # Yazi file manager config
+│   └── superfile/         # superfile (spf) file manager config + hotkeys
 ├── .ssh/
 │   └── config             # SSH host configuration (multiplexed connections)
 ├── Library/LaunchAgents/  # Borders LaunchAgent (window borders at login)
@@ -85,7 +84,7 @@ dotfiles/
 | `ls` | `eza -la --icons=always` | Enhanced file listing with icons |
 | `wt` | `wezterm cli set-tab-title` | Quick tab title setting |
 | `lg` | `lazygit` | Git TUI |
-| `ld` | `lazydocker` | Docker/Podman TUI |
+| `ld` | `lazydocker` | Docker TUI (OrbStack) |
 | `reload` | `source ~/.zshrc` | Reload shell config |
 | `..` / `...` | `cd ..` / `cd ../..` | Go up one or two directories |
 | `ports` | `lsof -iTCP -sTCP:LISTEN -P -n` | List listening TCP ports |

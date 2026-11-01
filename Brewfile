@@ -11,7 +11,6 @@ brew "jq"
 brew "lazygit"
 brew "lazydocker"
 brew "zoxide"
-brew "yazi"
 brew "superfile"
 brew "stow"
 brew "gh"
@@ -47,6 +46,8 @@ brew "lua"
 
 # ── Container tools ────────────────────────────────────────────────
 brew "podman"
+# Docker engine and docker CLI; replaces Docker Desktop
+cask "orbstack"
 
 # ── Fonts ──────────────────────────────────────────────────────────
 cask "font-sf-mono"

@@ -26,8 +26,6 @@ alias wt="wezterm cli set-tab-title"
     eval "cd${name}() { [[ -d ${dir} ]] && cd ${dir} || echo 'Directory not found: ${dir}'; }"
   done < ~/.config/directories
 }
-# Podman socket for lazydocker (macOS)
-export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}' 2>/dev/null)"
 alias lg="lazygit"
 alias ld="lazydocker"
 alias reload="source ~/.zshrc"
