@@ -1,7 +1,44 @@
-# This is Git's per-user configuration file.
 [user]
-# Please adapt and uncomment the following lines:
-name = Magomed Achtaew
-email = m.achtaew@gmail.com 
+	name = Magomed Achtaew
+	email = m.achtaew@gmail.com
+
 [init]
 	defaultBranch = main
+
+[alias]
+	st = status -sb
+	lg = log --graph --oneline --decorate -20
+	co = checkout
+	sw = switch
+	sc = switch -c
+	cm = commit -m
+	ca = commit --amend --no-edit
+	undo = reset --soft HEAD~1
+	unstage = restore --staged .
+	wip = !git add -A && git commit -m 'wip'
+	# Local branches whose upstream was deleted on the remote.
+	gone = !git branch -vv | awk '/: gone]/ {print ($1 == \"*\" ? $2 : $1)}'
+	prune-merged = !git gone | xargs -r git branch -D
+
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[rebase]
+	autoStash = true
+[rerere]
+	enabled = true
+[merge]
+	conflictstyle = zdiff3
+[diff]
+	algorithm = histogram
+[fetch]
+	prune = true
+[branch]
+	sort = -committerdate
+
+# Push over SSH, fetch over HTTPS. A plain insteadOf would also route
+# Homebrew taps and lazy.nvim plugin clones through SSH, which fails on a fresh
+# machine before bootstrap-ssh.sh has put the keys in place.
+[url "git@github.com:"]
+	pushInsteadOf = https://github.com/
