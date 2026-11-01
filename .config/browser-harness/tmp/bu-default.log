@@ -1,5 +1,0 @@
-connecting to ws://127.0.0.1:9222
-handshake-wait: if Chrome shows an 'Allow remote debugging?' popup, click Allow
-no real pages found, created about:blank (FDD44DF0879782D0E9D7794CDD36B32B)
-attached FDD44DF0879782D0E9D7794CDD36B32B (about:blank) session=63D26BE587B52519BD51F0B032BC419B
-listening on /Users/mago/dotfiles/.config/browser-harness/runtime/bu-default.sock (name=default, remote=local)
