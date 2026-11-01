@@ -27,11 +27,6 @@
 # Editor/Tool configs (generated/cache)
 .config/github-copilot/
 
-# OpenCode (track config and agents, but not sessions/history)
-.config/opencode/sessions/
-.config/opencode/history/
-.config/opencode/.cache/
-
 # Node modules (should be installed, not tracked)
 node_modules/
 bun.lock
