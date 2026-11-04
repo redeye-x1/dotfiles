@@ -5,6 +5,9 @@
       "model": "claude-opus-5-5"
     }
   ],
+  "storageCleanup": {
+    "browserArtifactsAfterDays": 7
+  },
   "projectSettingsFolded": true,
   "enableAgentDeviceAccess": true,
   "enableDeviceSupport": true,
@@ -17,6 +20,12 @@
     "codex": {
       "driver": "codex",
       "enabled": false
+    },
+    "claudeAgent": {
+      "driver": "claudeAgent",
+      "config": {
+        "launchArgs": "--chrome"
+      }
     }
   }
 }
