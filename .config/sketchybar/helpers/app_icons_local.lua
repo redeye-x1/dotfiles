@@ -10,11 +10,6 @@
 -- in the mappings/ directory of kvndrsslr/sketchybar-app-font.
 
 return {
-  -- Not in the font. A stand-in rather than a likeness: the alternatives are
-  -- all named after other products (:claude:, :codex:, :cursor:), which would
-  -- be worse than generic.
-  ["Superset"] = ":terminal:",
-
   -- Pencil, the .pen design editor. The font has nothing named after a pencil or
   -- a brush, so this borrows Notability's glyph, which draws only the tool and no
   -- wordmark -- unlike the design-app alternatives (:figma: is the F, :sketch: the
