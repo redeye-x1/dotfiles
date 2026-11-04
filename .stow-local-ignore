@@ -1,6 +1,7 @@
 # Ignore version control
 ^/\.git
 ^/\.gitignore
+^/\.githooks
 
 # Ignore documentation
 ^/README\.md

@@ -62,6 +62,9 @@ stow --adopt . 2>/dev/null || stow .
 
 echo "✓ Dotfiles symlinked"
 
+# The post-merge hook lists pending docs/migrations after every pull.
+git -C "$DOTFILES_DIR" config core.hooksPath .githooks
+
 # Create SSH sockets directory for connection multiplexing
 mkdir -p "$HOME/.ssh/sockets"
 

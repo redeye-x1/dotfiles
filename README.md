@@ -62,7 +62,7 @@ dotfiles/
 ├── .ssh/
 │   └── config             # SSH host configuration (multiplexed connections)
 ├── Library/LaunchAgents/  # Borders LaunchAgent (window borders at login)
-├── docs/                  # Design specs (not stowed)
+├── docs/                  # Design specs and migrations (not stowed)
 ├── .zshrc                 # Zsh configuration (plugins, aliases, tools)
 ├── .zprofile              # Zsh profile (Homebrew init)
 ├── .p10k.zsh              # Powerlevel10k theme config
@@ -308,6 +308,11 @@ git pull
 stow . --restow
 brew bundle
 ```
+
+Some changes need one-time manual steps on each Mac. Those live in
+`docs/migrations/`. After a pull, the git hook lists the ones this Mac hasn't
+applied yet, and Claude Code is told about them at session start. See
+`docs/migrations/README.md`.
 
 ## Security
 

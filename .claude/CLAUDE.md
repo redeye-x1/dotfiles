@@ -112,6 +112,8 @@ Before silencing a type or lint error (`any`, `@ts-ignore`, `eslint-disable`), c
 
 My machine config lives in ~/dotfiles (GNU Stow, Brewfile). Change config there, not in the symlinked copies under ~, and add new tools to the Brewfile.
 
+I use ~/dotfiles on two Macs. When a dotfiles change needs manual steps on the other Mac (uninstalling something, moving files, a setting stow can't apply), add a new file to ~/dotfiles/docs/migrations/ (see its README) and mark it done on this Mac.
+
 The shell is zsh with aliases (`ls` → eza and others). Use `command ls`, or the full tool name, in scripts and when parsing output.
 
 Use the package manager whose lockfile the project has (bun, pnpm, npm, yarn).

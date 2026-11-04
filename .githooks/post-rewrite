@@ -1,0 +1,4 @@
+#!/bin/sh
+# pull.rebase is on, so a pull with local commits rebases and skips post-merge.
+[ "$1" = rebase ] || exit 0
+exec "$(git rev-parse --show-toplevel)/.claude/hooks/pending-migrations.sh"

@@ -1,0 +1,3 @@
+#!/bin/sh
+# After a pull, list migrations this Mac still has to apply.
+exec "$(git rev-parse --show-toplevel)/.claude/hooks/pending-migrations.sh"
