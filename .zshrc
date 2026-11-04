@@ -110,7 +110,15 @@ bindkey '^[[B' history-substring-search-down
 # ── bat: syntax-highlighted man pages and help ─────────────────────
 export MANPAGER="sh -c 'col -bx | bat -l man -p'"
 export MANROFFOPT="-c"
-alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
+# Global aliases expand in any code parsed later, e.g. `case` patterns in
+# wrapper files sourced after this one (Orca). Define it at the first prompt.
+_bat_help_alias() {
+  alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
+  add-zsh-hook -d precmd _bat_help_alias
+  unfunction _bat_help_alias
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _bat_help_alias
 export PATH=$PATH:$HOME/.maestro/bin
 
 # ── Maus-Reporting am Prompt zurücksetzen ──────────────────────────
