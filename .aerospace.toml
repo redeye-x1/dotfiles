@@ -9,13 +9,6 @@ persistent-workspaces = ['1', '2', '3', '4', '5', '6']
 # Start AeroSpace at login
 start-at-login = true
 
-# Launch the pinned apps at login; the on-window-detected rules below put them
-# on workspaces 1 and 2. `open -a` only focuses an app that is already running.
-after-startup-command = [
-  'exec-and-forget open -a Orca',
-  'exec-and-forget open -a Vivaldi',
-]
-
 # SketchyBar starts on its own via `brew services`, so nothing to launch here.
 
 # Normalizations. See: https://nikitabobko.github.io/guide#normalization
@@ -48,17 +41,6 @@ exec-on-workspace-change = [
 [[on-window-detected]]
 check-further-callbacks = true
 run = ['exec-and-forget sketchybar --trigger aerospace_workspace_change']
-
-# Pin apps to fixed workspaces. Bundle IDs match on both Macs, and AeroSpace
-# also runs these for windows already open when it starts, so the layout is
-# restored after every login.
-[[on-window-detected]]
-if.app-id = 'com.stablyai.orca'
-run = ['move-node-to-workspace 1', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
-
-[[on-window-detected]]
-if.app-id = 'com.vivaldi.Vivaldi'
-run = ['move-node-to-workspace 2', 'exec-and-forget sketchybar --trigger aerospace_workspace_change']
 
 # Gaps between windows
 [gaps]
