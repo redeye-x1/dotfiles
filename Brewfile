@@ -14,6 +14,8 @@ brew "zoxide"
 brew "superfile"
 brew "stow"
 brew "gh"
+# Proton Pass CLI: agents read secrets as pass:// references through a vault-scoped token
+brew "protonpass/tap/pass-cli"
 # .zshrc puts these on PATH ahead of the system versions
 brew "unzip"
 brew "python@3.12"
@@ -43,6 +45,8 @@ brew "sketchybar"
 # against, currently 5.5 -- install.sh checks this and refuses to continue on a
 # mismatch, because loading the module into the wrong Lua segfaults silently.
 brew "lua"
+# Rotates displays when System Settings doesn't offer it
+brew "displayplacer"
 
 # ── Container tools ────────────────────────────────────────────────
 # Docker engine and docker CLI; replaces Docker Desktop
