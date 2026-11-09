@@ -48,6 +48,10 @@ brew "lua"
 # Rotates displays when System Settings doesn't offer it
 brew "displayplacer"
 
+# ── Network ────────────────────────────────────────────────────────
+# Reaches the home dev server "night" (ssh night, T3, VNC)
+cask "tailscale-app"
+
 # ── Container tools ────────────────────────────────────────────────
 # Docker engine and docker CLI; replaces Docker Desktop
 cask "orbstack"
