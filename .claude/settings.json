@@ -216,7 +216,8 @@
   "enabledPlugins": {
     "telegram@claude-plugins-official": true,
     "superpowers@claude-plugins-official": true,
-    "browser-use@synced": false
+    "browser-use@synced": false,
+    "expo@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "aaron-seo-geo": {

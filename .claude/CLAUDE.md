@@ -118,7 +118,7 @@ The shell is zsh with aliases (`ls` → eza and others). Use `command ls`, or th
 
 Use the package manager whose lockfile the project has (bun, pnpm, npm, yarn).
 
-Browser automation goes through Claude in Chrome only. If it isn't available or doesn't connect, tell me to set it up instead of using another tool.
+Browser automation goes through Claude in Chrome only. If it isn't available or doesn't connect, tell me to set it up instead of using another tool. Exception: the chrome-devtools MCP (and Playwright, once set up) may be used to measure and test our own sites and dev servers (Lighthouse, performance traces, network, automated tests) in its own isolated browser. Never for sites that need my logins.
 
 ~/exponent holds agency and client work, ~/development/projects my own projects.
 
