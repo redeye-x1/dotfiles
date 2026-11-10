@@ -66,7 +66,7 @@ For changes across several files, have the `reviewer` subagent (Opus, medium eff
 
 # Git
 
-Commit only when I ask. Committing is not part of "done". Exception: in repos under `~/exponent` and `~/projects` (on the Mac also `~/development/projects`), commit on your own whenever a piece of work is finished; the rules below still apply. Pushing still needs my OK there, except `~/exponent-agent` (memory, skills, Exponent CLAUDE.md): commit and push that yourself after every change, so all machines stay in sync.
+Commit only when I ask. Committing is not part of "done". Exception: in repos under `~/exponent` and `~/projects` (on the Mac also `~/development/projects`), commit and push on your own whenever a piece of work is finished, so all machines stay in sync; the rules below still apply. For `~/exponent-agent` (memory, skills, Exponent CLAUDE.md) that means after every change.
 
 Stage only the files you changed, by name. Never `git add -A` or `git add .`; other agents or I may have uncommitted work in the same tree.
 
