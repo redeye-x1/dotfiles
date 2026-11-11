@@ -66,37 +66,37 @@ must print `night`.
 
 ## 3. Link night in T3 Code
 
-On this Mac, ask the T3 agent to link the machine "night", then create a
-pairing code (valid 5 minutes, never paste it into a chat):
+Create a pairing code (valid 5 minutes, never paste it into a chat). The double
+quotes matter: `scutil` has to run on this Mac, not on night:
 
 ```bash
-ssh night '~/.local/bin/t3 pair --tailscale --label "$(scutil --get LocalHostName)"'
+ssh night "~/.local/bin/t3 pair --tailscale --label $(scutil --get LocalHostName)"
 ```
 
-Enter the address `https://night.tail4aad3f.ts.net` and the code in the card.
+In T3 Code on this Mac, add it under **Environments**, with the address
+`https://night.tail4aad3f.ts.net` and the code. Not under "Linked
+environments": that links night as an agent ("bot"), and creating projects on
+night then fails.
+
+T3 client and server versions must match. If this Mac's T3 is newer, run
+`t3 update` on night and point `~/.local/bin/t3` at the new version in
+`~/.t3/runtime/versions/`, then `systemctl --user restart t3`.
 
 ## 4. Work projects (Forgejo)
 
-Work code goes to `~/work/` on night, cloned from the employer's Forgejo with
-the same git identity as everywhere else. night gets its **own** SSH key just
-for Forgejo, so it can be revoked on its own:
+Already set up on night (2026-11-11); nothing to do per Mac. For reference:
 
-```bash
-ssh night 'ssh-keygen -t ed25519 -N "" -C "red@night-forgejo" -f ~/.ssh/id_ed25519_forgejo && cat ~/.ssh/id_ed25519_forgejo.pub'
-```
-
-Add that public key to the Forgejo profile, then add a host entry **on night**
-(night's own `~/.ssh/config`, not this repo), with the real host and port:
-
-```
-Host <forgejo-host>
-  User git
-  Port <ssh-port>
-  IdentityFile ~/.ssh/id_ed25519_forgejo
-  IdentitiesOnly yes
-```
-
-Clone with `git clone git@<forgejo-host>:<org>/<repo>.git ~/work/<repo>`.
+- Work code lives in `~/work/` on night, cloned from the employer's Forgejo
+  (`saga.vega-dev.at`) with the same git identity as everywhere else.
+- saga has no Git over SSH, only HTTPS. The token is scoped to saga alone:
+  `credential.https://saga.vega-dev.at.helper` stores it in
+  `~/.git-credentials-saga`, so private GitHub stays untouched.
+- `fj` (forgejo-cli) is logged in for PRs; the `@vega` npm token is in
+  night's `~/.npmrc`.
+- Atlassian MCP is configured for `~/work` only (`~/work/.mcp.json`), not
+  globally.
+- How to run the Lyra/Nova stack there: `~/work/docs/specs/2026-09-28-driver-module-handoff.md`,
+  section "On night".
 
 ## 5. Things to know
 
